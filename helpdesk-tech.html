@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía Definitiva: HelpDesk TI IA con FastAPI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            background: #f0f4f8;
+            color: #1e293b;
+            line-height: 1.5;
+            padding: 2rem;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #0f172a, #3b82f6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .badge {
+            background: #0f172a;
+            color: white;
+            padding: 0.25rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        .phase {
+            background: white;
+            border-radius: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.02);
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+        .phase-header {
+            background: #f8fafc;
+            padding: 1.2rem 1.8rem;
+            border-bottom: 2px solid #e2e8f0;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 700;
+            font-size: 1.3rem;
+        }
+        .phase-header:hover {
+            background: #f1f5f9;
+        }
+        .phase-content {
+            padding: 1.8rem;
+            display: none;
+            border-top: 1px solid #e2e8f0;
+        }
+        .phase-content.show {
+            display: block;
+        }
+        pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 1rem;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.85rem;
+            margin: 1rem 0;
+        }
+        code {
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            color: #0f172a;
+        }
+        .json-sample {
+            background: #fef9c3;
+            border-left: 4px solid #eab308;
+        }
+        .form-card {
+            background: #f1f5f9;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        button.copy-btn {
+            background: #3b82f6;
+            border: none;
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-left: 1rem;
+        }
+        hr {
+            margin: 1rem 0;
+            border-color: #cbd5e1;
+        }
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: #475569;
+        }
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .grid-2 { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🧠 HelpDesk TI IA · Migración a FastAPI + Python</h1>
+        <div class="badge">Plan de implementación profesional · Agente de desarrollo inteligente</div>
+        <p style="margin-top: 0.8rem;">Fases claras, JSON para documentos, formularios de registro y comandos listos para VS Code / Antigravity</p>
+    </header>
+
+    <!-- FASE 1: ENTORNO Y PROYECTO BASE -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>📦 Fase 1: Setup del entorno y proyecto base</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <h3>🎯 Objetivo: Crear estructura de carpetas, entorno virtual, Docker y primeras dependencias.</h3>
+            <div class="grid-2">
+                <div>
+                    <p><strong>📁 Estructura recomendada (backend):</strong></p>
+                    <pre>
+helpdesk-backend/
+├── app/
+│   ├── api/         # endpoints versionados
+│   ├── core/        # config, security, db
+│   ├── models/      # SQLAlchemy models
+│   ├── schemas/     # Pydantic schemas (JSON validation)
+│   ├── services/    # lógica de negocio, IA, websocket
+│   └── utils/       # helpers (firmas, secuencias)
+├── alembic/         # migraciones
+├── requirements.txt
+├── Dockerfile
+├── docker-compose.yml
+└── .env
+                    </pre>
+                </div>
+                <div>
+                    <p><strong>🐍 Comandos iniciales (VS Code terminal):</strong></p>
+                    <pre>
+mkdir helpdesk-backend && cd helpdesk-backend
+python -m venv venv
+source venv/bin/activate  # Linux/Mac | venv\Scripts\activate (Windows)
+pip install fastapi uvicorn[standard] sqlalchemy asyncpg alembic python-jose[cryptography] passlib[bcrypt] python-multipart openai pillow websockets redis celery slowapi httpx
+pip freeze > requirements.txt
+                    </pre>
+                    <p><strong>🐳 Docker Compose básico:</strong> <button class="copy-btn" data-code="docker-compose.yml">Copiar</button></p>
+                    <pre id="docker-compose.yml">
+version: '3.8'
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: helpdesk
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: helpdesk
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+volumes:
+  pgdata:
+                    </pre>
+                </div>
+            </div>
+            <div class="form-card">
+                <p>✅ <strong>Verificación:</strong> Crear archivo <code>.env</code> con <code>DB_PASSWORD=seguro</code> y <code>OPENAI_API_KEY=sk-...</code>.  
+                Levantar servicios: <code>docker-compose up -d</code>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FASE 2: MODELOS SQLALCHEMY + ALEMBIC + TRAZABILIDAD -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>🗄️ Fase 2: Modelos de datos, secuencias y auditoría</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <h3>Modelos base (User, Ticket, Product, TicketMaterial, Sequence, AuditLog)</h3>
+            <pre><code># app/models/ticket.py (fragmento clave)
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Boolean
+from sqlalchemy.sql import func
+from app.core.database import Base
+
+class Ticket(Base):
+    __tablename__ = "tickets"
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(30), unique=True, nullable=False)  # TKT-2025-000001
+    title = Column(String(200), nullable=False)
+    description = Column(Text)
+    status = Column(String(20), default="open")
+    priority = Column(String(20), default="medium")
+    company_id = Column(Integer, ForeignKey("companies.id"))
+    created_by_id = Column(Integer, ForeignKey("users.id"))
+    assigned_tech_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    closed_at = Column(DateTime(timezone=True), nullable=True)
+
+# Tabla Sequence para códigos únicos
+class Sequence(Base):
+    __tablename__ = "sequences"
+    entity = Column(String(50), primary_key=True)  # 'ticket', 'product', 'movement'
+    last_number = Column(Integer, default=0)
+</code></pre>
+            <p><strong>🔁 Generar código secuencial atómico (función en servicio):</strong></p>
+            <pre><code>async def get_next_code(db: AsyncSession, entity: str, prefix: str) -> str:
+    result = await db.execute(
+        select(Sequence).where(Sequence.entity == entity).with_for_update()
+    )
+    seq = result.scalar_one_or_none()
+    if not seq:
+        seq = Sequence(entity=entity, last_number=0)
+        db.add(seq)
+    seq.last_number += 1
+    await db.flush()
+    year = datetime.now().year
+    return f"{prefix}-{year}-{seq.last_number:06d}"</code></pre>
+            <p><strong>📜 Migración con Alembic:</strong></p>
+            <pre>alembic init migrations
+# Editar alembic.ini (sqlalchemy.url = postgresql+asyncpg://...)
+alembic revision --autogenerate -m "initial models"
+alembic upgrade head</pre>
+        </div>
+    </div>
+
+    <!-- FASE 3: JSON ESTRUCTURADOS PARA IMPRESIÓN DE DOCUMENTOS -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>📄 Fase 3: JSON para impresión profesional (tickets, reportes, movimientos)</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <p>El sistema generará documentos PDF/HTML a partir de estos JSON normalizados. Ejemplos listos para usar en el frontend o en generadores como <code>jsPDF</code> o reportlab (Python).</p>
+            <div class="grid-2">
+                <div>
+                    <h4>🎫 Ticket de soporte (cierre)</h4>
+                    <pre class="json-sample">{
+  "document_type": "ticket_closure",
+  "ticket_code": "TKT-2025-000123",
+  "created_at": "2025-03-15T10:30:00Z",
+  "client_name": "Empresa XYZ",
+  "technician": "Ana Gómez",
+  "problem_summary": "Error con impresora fiscal",
+  "resolution": "Actualización de drivers y limpieza de cabezal",
+  "materials_used": [
+    { "product_code": "PROD-045", "name": "Toner HP", "quantity": 1 }
+  ],
+  "digital_signature_url": "/signatures/tkt-000123_tech.png",
+  "total_cost": 45.50
+}</pre>
+                </div>
+                <div>
+                    <h4>📊 Reporte mensual de KPIs</h4>
+                    <pre class="json-sample">{
+  "report_month": "2025-03",
+  "total_tickets": 187,
+  "avg_resolution_hours": 4.2,
+  "top_categories": ["Hardware", "Software", "Redes"],
+  "technician_efficiency": [
+    {"name": "Carlos Ruiz", "closed_tickets": 42, "avg_rating": 4.8}
+  ],
+  "inventory_consumption": [
+    {"category": "Tóner", "units": 23, "cost": 1150}
+  ]
+}</pre>
+                </div>
+            </div>
+            <div>
+                <h4>📦 Movimiento de inventario (vinculado a ticket)</h4>
+                <pre class="json-sample">{
+  "movement_code": "MOV-2025-000879",
+  "ticket_code": "TKT-2025-000123",
+  "product_code": "PROD-045",
+  "quantity": 1,
+  "movement_type": "output",
+  "authorized_by": "Ana Gómez",
+  "timestamp": "2025-03-15T11:20:00Z",
+  "observations": "Reposición urgente"
+}</pre>
+            </div>
+            <div class="form-card">
+                <p>💡 <strong>Implementación recomendada:</strong> Endpoint <code>GET /documents/ticket/{ticket_id}?format=json</code> devuelve el JSON, luego el frontend lo envía a una impresora térmica o genera PDF usando <code>window.print()</code> o librería <strong>react‑pdf</strong>.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FASE 4: FORMULARIOS DE REGISTRO (BACKEND PYDANTIC + REACT) -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>📝 Fase 4: Formularios de registro (Schemas Pydantic + Frontend)</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <h3>Validación robusta con Pydantic v2 (FastAPI)</h3>
+            <pre><code># app/schemas/ticket.py
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Optional, List
+
+class TicketCreate(BaseModel):
+    title: str = Field(..., min_length=3, max_length=200)
+    description: str
+    priority: str = "medium"
+    company_id: int
+
+class TicketOut(BaseModel):
+    id: int
+    code: str
+    title: str
+    status: str
+    created_at: datetime
+    assigned_tech_name: Optional[str]
+
+    class Config:
+        from_attributes = True</code></pre>
+            <h4>🧾 Ejemplo de formulario React (cliente) que consume API</h4>
+            <pre><code>// NuevoTicketForm.tsx
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const res = await fetch('/api/tickets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ title, description, priority: 'high', company_id: 1 })
+  });
+  const data = await res.json();
+  console.log('Ticket creado con IA clasificando en background:', data);
+};</code></pre>
+            <div class="form-card">
+                <p><strong>✏️ Formulario de usuario (registro con roles):</strong></p>
+                <pre>POST /auth/register
+{
+  "email": "tecnico@empresa.com",
+  "password": "Secure123",
+  "full_name": "Luis Martínez",
+  "role": "technician",     // admin | technician | user
+  "company_id": 3
+}</pre>
+            </div>
+        </div>
+    </div>
+
+    <!-- FASE 5: AUTENTICACIÓN JWT + RBAC + MULTI-TENANT -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>🔐 Fase 5: Autenticación, JWT y control de acceso</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <p>Implementación con <code>python-jose</code> y dependencias FastAPI.</p>
+            <pre><code># app/api/deps.py
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from jose import jwt, JWTError
+from app.core.config import settings
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        user_id = payload.get("sub")
+        # obtener usuario desde DB con su company_id
+        return user
+    except JWTError:
+        raise HTTPException(status_code=403, detail="Token inválido")
+
+# Uso en endpoint
+@router.get("/tickets/me")
+async def my_tickets(current_user: User = Depends(get_current_user)):
+    # Filtra automáticamente por company_id si no es superadmin
+    return await ticket_service.get_by_company(current_user.company_id)
+</code></pre>
+            <p><strong>Middleware de auditoría (IP, acción):</strong> Usar <code>@app.middleware("http")</code> para registrar cada request.</p>
+        </div>
+    </div>
+
+    <!-- FASE 6: INTEGRACIÓN DE IA (CLASIFICACIÓN Y RESUMEN) -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>🤖 Fase 6: Agente de IA (OpenAI + LangChain)</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <p>Clasificación automática asíncrona sin bloquear la creación del ticket.</p>
+            <pre><code># app/services/ai_classifier.py
+import openai
+from openai import AsyncOpenAI
+client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+
+async def classify_ticket(description: str):
+    prompt = f"Clasifica este ticket en una de estas categorías: Hardware, Software, Red, Otro. Y asigna prioridad baja/media/alta.\n\nTexto: {description}"
+    response = await client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.3
+    )
+    # Parsear respuesta y actualizar ticket en DB
+    return {"category": "...", "priority": "..."}</code></pre>
+            <p>Llamada desde endpoint con <code>BackgroundTasks</code>:</p>
+            <pre>background_tasks.add_task(update_ticket_with_ai, ticket_id, ticket.description)</pre>
+            <div class="form-card">
+                <p>🧠 <strong>Skill extra:</strong> Resumen automático de cierre – al marcar "resuelto", IA genera resumen en lenguaje natural.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FASE 7: WEBSOCKETS EN TIEMPO REAL (reemplazo Pusher) -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>⚡ Fase 7: WebSockets para notificaciones en vivo</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <p><strong>ConnectionManager</strong> y broadcast cuando se actualiza un ticket.</p>
+            <pre><code># app/services/websocket_manager.py
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[int, WebSocket] = {}
+    async def connect(self, user_id: int, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+    async def send_to_user(self, user_id: int, message: dict):
+        if user_id in self.active_connections:
+            await self.active_connections[user_id].send_json(message)
+
+# En endpoint de actualización de ticket:
+await manager.send_to_user(ticket.assigned_tech_id, {"event": "ticket_updated", "ticket_id": ticket.id})</code></pre>
+            <p><strong>Cliente React:</strong></p>
+            <pre><code>const ws = new WebSocket(`ws://localhost:8000/ws/${userId}`);
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  if (data.event === 'ticket_updated') refetchTickets();
+};</code></pre>
+        </div>
+    </div>
+
+    <!-- FASE 8: DOCKER PRODUCCIÓN + NGINX REVERSE PROXY -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>🐳 Fase 8: Despliegue con Docker + Nginx (servidor Ubuntu)</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <h3>Dockerfile multi‑etapa para FastAPI</h3>
+            <pre><code>FROM python:3.12-slim as builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
+
+FROM python:3.12-slim
+WORKDIR /app
+COPY --from=builder /root/.local /root/.local
+COPY ./app /app/app
+COPY ./alembic /app/alembic
+ENV PATH=/root/.local/bin:$PATH
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre>
+            <p><strong>Configuración Nginx en host (Ubuntu):</strong></p>
+            <pre><code>server {
+    listen 80;
+    server_name helpdesk.midominio.com;
+    location /api/ {
+        proxy_pass http://localhost:8000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+    location /ws/ {
+        proxy_pass http://localhost:8000/ws/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    location / {
+        root /var/www/helpdesk-frontend/build;
+        try_files $uri /index.html;
+    }
+}</code></pre>
+            <p>🔒 Proteger código: el backend corre dentro de contenedor, el fuente no es accesible desde fuera.</p>
+        </div>
+    </div>
+
+    <!-- FASE 9: PRUEBAS Y PUESTA EN MARCHA -->
+    <div class="phase">
+        <div class="phase-header">
+            <span>✅ Fase 9: Testing, documentación y go-live</span>
+            <span>▼</span>
+        </div>
+        <div class="phase-content">
+            <ul>
+                <li><strong>Documentación automática:</strong> <code>http://localhost:8000/docs</code> (Swagger UI).</li>
+                <li><strong>Test de carga con Locust:</strong> <code>pip install locust</code> y simular 100 usuarios.</li>
+                <li><strong>Script de verificación de secuencias:</strong> Asegurar que no haya colisiones en códigos TKT / MOV.</li>
+                <li><strong>Comandos útiles:</strong>
+                    <pre>docker-compose up -d --build
+alembic upgrade head
+python -m app.scripts.seed_data   # datos iniciales (roles, admin)
+sudo systemctl restart nginx</pre>
+                </li>
+            </ul>
+            <div class="form-card">
+                <p>🎯 <strong>Checklist final:</strong>  
+                ☑️ Todos los endpoints protegidos por JWT.  
+                ☑️ Los JSON de impresión se generan correctamente.  
+                ☑️ Los formularios de registro validan datos en frontend y backend.  
+                ☑️ La IA clasifica tickets nuevos y no bloquea la UI.  
+                ☑️ WebSockets actualizan dashboards en tiempo real.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>📌 Este documento actúa como <strong>agente inteligente de implementación</strong>. Copia cada comando, adapta las rutas y tendrás tu HelpDesk TI IA completamente funcional con Python + FastAPI.</p>
+        <p>✨ Desarrollado para VS Code / Antigravity – Sigue el orden de fases para una migración exitosa.</p>
+    </footer>
+</div>
+
+<script>
+    // Acordeón para las fases
+    const headers = document.querySelectorAll('.phase-header');
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const content = header.nextElementSibling;
+            content.classList.toggle('show');
+            const span = header.querySelector('span:last-child');
+            span.textContent = content.classList.contains('show') ? '▲' : '▼';
+        });
+        // abrir primera fase por defecto
+        if(header.parentElement === document.querySelector('.phase')) {
+            header.nextElementSibling.classList.add('show');
+            header.querySelector('span:last-child').textContent = '▲';
+        }
+    });
+
+    // Botones copiar
+    const copyButtons = document.querySelectorAll('.copy-btn');
+    copyButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const codeId = btn.getAttribute('data-code');
+            const codeBlock = document.getElementById(codeId);
+            if(codeBlock) {
+                const text = codeBlock.innerText;
+                navigator.clipboard.writeText(text);
+                btn.textContent = '✓ Copiado';
+                setTimeout(() => btn.textContent = 'Copiar', 1500);
+            }
+        });
+    });
+</script>
+</body>
+</html>

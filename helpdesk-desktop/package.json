@@ -1,0 +1,31 @@
+{
+  "name": "helpdesk-desktop",
+  "version": "1.0.0",
+  "description": "HelpDesk TI AI - Versión Escritorio",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [],
+  "author": "Alberto Guzman",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1",
+    "cross-env": "^7.0.3"
+  },
+  "build": {
+    "appId": "com.helpdesk.ai",
+    "productName": "HelpDesk TI AI",
+    "win": {
+      "target": "nsis",
+      "requestedExecutionLevel": "requireAdministrator"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
