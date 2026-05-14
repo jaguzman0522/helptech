@@ -35,7 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const API_URL = 'http://localhost:8001/api/v1';
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1';
 
   useEffect(() => {
     const savedToken = cookie.get('token');

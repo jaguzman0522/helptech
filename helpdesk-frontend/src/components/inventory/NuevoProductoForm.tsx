@@ -86,7 +86,8 @@ export default function NuevoProductoForm({ onSuccess, onCancel }: Props) {
           categoria_nombre: data.categoria
         }
       };
-      return axios.post('http://localhost:8001/api/v1/inventory/', payload, {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8001/api/v1';
+      return axios.post(`${apiUrl}/inventory/`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
     },
