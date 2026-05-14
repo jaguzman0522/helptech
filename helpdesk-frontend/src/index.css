@@ -35,7 +35,48 @@ body {
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-900;
+    @apply font-sans text-slate-900 bg-slate-50;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6, .font-outfit {
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+@layer components {
+  /* Estilos de Impresión de Reportes (basados en index.html) */
+  .pdf-card {
+    @apply bg-white text-black max-w-[800px] mx-auto;
+  }
+  
+  .pdf-header {
+    @apply border-b-2 border-slate-900 pb-5;
+  }
+  
+  .pdf-section-title {
+    @apply text-[10px] font-extrabold text-slate-500 uppercase tracking-widest;
+  }
+  
+  .pdf-data {
+    @apply text-[13px] font-bold text-slate-800 border-b border-slate-100 pb-[2px];
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    padding: 0 !important;
+    color: black !important;
+  }
+
+  /* Forzar visibilidad de áreas imprimibles específicas */
+  .print-only {
+    display: block !important;
   }
 }
 

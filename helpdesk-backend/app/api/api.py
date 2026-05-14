@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.endpoints import auth, users, tickets, websockets, inventory, profile, calendar, maintenance, reports, settings, superadmin, external, assignments, public, roles
+from app.api.endpoints import auth, users, tickets, websockets, inventory, profile, calendar, maintenance, reports, settings, superadmin, external, assignments, public, roles, api_keys, rounds
 
 api_router = APIRouter()
 
@@ -18,3 +18,5 @@ api_router.include_router(superadmin.router, prefix="/superadmin", tags=["supera
 api_router.include_router(external.router, prefix="/external", tags=["external"])
 api_router.include_router(public.router, prefix="/public", tags=["public"])
 api_router.include_router(assignments.router, prefix="/inventory/assignments", tags=["assignments"])
+api_router.include_router(api_keys.router, prefix="/api-keys", tags=["api-keys"])
+api_router.include_router(rounds.router, prefix="/rounds", tags=["rounds"])

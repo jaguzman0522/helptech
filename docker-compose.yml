@@ -8,8 +8,10 @@ services:
     env_file:
       - ./helpdesk-backend/.env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   worker:
     build: ./helpdesk-backend
@@ -19,8 +21,10 @@ services:
     env_file:
       - ./helpdesk-backend/.env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   beat:
     build: ./helpdesk-backend
@@ -30,8 +34,10 @@ services:
     env_file:
       - ./helpdesk-backend/.env
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   db:
     image: postgres:16-alpine
@@ -43,6 +49,11 @@ services:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U helpdesk -d helpdesk"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -63,4 +74,3 @@ services:
 
 volumes:
   pgdata:
-

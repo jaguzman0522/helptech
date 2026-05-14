@@ -20,7 +20,28 @@ async def list_products(
 ):
     query = select(Product).where(Product.company_id == current_user.company_id)
     result = await db.execute(query)
-    return result.scalars().all()
+    products = result.scalars().all()
+    
+    # Manual serialization to avoid circular references and 500 errors
+    return [
+        {
+            "id": p.id,
+            "code": p.code,
+            "barcode": p.barcode,
+            "name": p.name,
+            "description": p.description,
+            "type": p.type,
+            "status": p.status,
+            "stock_total": p.stock_total,
+            "stock_min": p.stock_min,
+            "brand": p.brand,
+            "model": p.model,
+            "serial_number": p.serial_number,
+            "category_id": p.category_id,
+            "specs": p.specs
+        }
+        for p in products
+    ]
 
 @router.get("/assets/{identifier}")
 async def get_asset_360(
@@ -120,6 +141,11 @@ async def create_product(
     # Logic for auto-barcode based on category
     barcode = f"BC-{product_in.get('category_id')}-{code}"
     
+    # Extraer marca y modelo de specs si vienen del nuevo formulario
+    specs = product_in.get("specs", {})
+    brand = specs.get("marca") if specs else None
+    model = specs.get("modelo") if specs else None
+
     db_product = Product(
         code=code,
         barcode=barcode,
@@ -133,13 +159,20 @@ async def create_product(
         category_id=product_in.get("categoriaId"),
         provider_id=product_in.get("proveedorId"),
         serial_number=product_in.get("numeroSerie"),
-        specs=product_in.get("specs")
+        brand=brand,
+        model=model,
+        specs=specs
     )
     
     db.add(db_product)
     await db.commit()
     await db.refresh(db_product)
-    return db_product
+    return {
+        "id": db_product.id,
+        "code": db_product.code,
+        "name": db_product.name,
+        "status": "success"
+    }
 
 @router.post("/purchase-orders", response_model=dict)
 async def create_purchase_order(

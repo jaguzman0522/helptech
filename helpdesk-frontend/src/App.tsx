@@ -16,6 +16,7 @@ import TicketDetail from './pages/TicketDetail';
 import PublicAsset from './pages/PublicAsset';
 import Messages from './pages/Messages';
 import AccessControl from './pages/AccessControl';
+import SupportRounds from './pages/SupportRounds';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 
@@ -57,6 +58,7 @@ function App() {
         <Route path="/dashboard/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
         <Route path="/dashboard/access" element={<ProtectedRoute><AccessControl /></ProtectedRoute>} />
         <Route path="/dashboard/assets/lookup" element={<ProtectedRoute><AssetLookup /></ProtectedRoute>} />
+        <Route path="/dashboard/rounds" element={<ProtectedRoute><SupportRounds /></ProtectedRoute>} />
         <Route path="/public/asset/:token" element={<PublicAsset />} />
         
         {/* SuperAdmin Routes */}

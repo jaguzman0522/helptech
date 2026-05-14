@@ -16,7 +16,8 @@ import {
   MessageSquare,
   ShieldCheck,
   QrCode,
-  Building2
+  Building2,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { clsx, type ClassValue } from 'clsx';
@@ -35,6 +36,7 @@ const menuItems = [
   { icon: CalendarIcon, label: 'Agenda', href: '/dashboard/calendar' },
   { icon: BarChart3, label: 'Reportes', href: '/dashboard/reports' },
   { icon: ShieldCheck, label: 'Accesos', href: '/dashboard/access' },
+  { icon: ClipboardList, label: 'Rondas Técnicas', href: '/dashboard/rounds' },
   { icon: SettingsIcon, label: 'Configuración', href: '/dashboard/settings' },
   { icon: User, label: 'Perfil', href: '/dashboard/profile' },
 ];

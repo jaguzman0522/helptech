@@ -85,7 +85,9 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-slate-900">Bienvenido, {user?.full_name.split(' ')[0]} 👋</h1>
+        <h1 className="text-3xl font-bold text-slate-900">
+          Bienvenido, {user?.full_name?.split(' ')[0] || 'Usuario'} 👋
+        </h1>
         <p className="text-slate-500 mt-1">Aquí tienes un resumen del estado del soporte técnico hoy.</p>
       </div>
 

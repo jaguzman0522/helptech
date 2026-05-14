@@ -20,17 +20,26 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const formData = new FormData();
-      formData.append('username', email);
-      formData.append('password', password);
-
-      const response = await axios.post('http://localhost:8001/api/v1/auth/login', formData);
+      const response = await axios.post('http://localhost:8001/api/v1/auth/login', {
+        username: email,
+        password: password
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
       await login(response.data.access_token);
       showNotification('success', '¡Bienvenido de nuevo!', 'Iniciando sesión en tu panel de control...');
       navigate('/dashboard');
     } catch (err: any) {
-      showNotification('error', 'Acceso Denegado', 'El correo o la contraseña no coinciden. Por favor, verifica tus datos.');
-      setError(err.response?.data?.detail || 'Error al iniciar sesión. Verifica tus credenciales.');
+      console.error('Login error:', err.response?.data);
+      const detail = err.response?.data?.detail;
+      const errorMessage = Array.isArray(detail) 
+        ? "Formato de datos inválido" 
+        : (typeof detail === 'string' ? detail : 'Error al iniciar sesión. Verifica tus credenciales.');
+      
+      showNotification('error', 'Acceso Denegado', errorMessage);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -91,25 +100,22 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Credencial de Acceso</label>
-                <div className="mt-1 relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
-                  </div>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="block w-full pl-12 pr-4 py-4 bg-slate-50/50 border border-slate-200/50 rounded-2xl leading-5 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 focus:bg-white transition-all duration-300"
-                    placeholder="admin@empresa.com"
-                  />
-                </div>
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Correo o Usuario</label>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                <input
+                  type="text"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all font-medium"
+                  placeholder="ej: aguzman o admin@empresa.com"
+                />
               </div>
+            </div>
 
-              <div>
+            <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Clave Maestra</label>
                 <div className="mt-1 relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -125,7 +131,6 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-            </div>
 
             <button
               type="submit"

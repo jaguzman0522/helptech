@@ -5,7 +5,7 @@ from datetime import datetime
 class RoleOut(BaseModel):
     id: int
     name: str
-    permissions: dict
+    permissions: Optional[dict] = {}
     is_system: bool
 
     class Config:
@@ -13,6 +13,7 @@ class RoleOut(BaseModel):
 
 class UserBase(BaseModel):
     email: EmailStr
+    username: Optional[str] = None
     full_name: Optional[str] = None
     role: str = "user"
     company_id: Optional[int] = None
@@ -30,6 +31,8 @@ class UserUpdate(BaseModel):
 class UserOut(UserBase):
     id: int
     user_code: Optional[str] = None
+    username: Optional[str] = None
+    role_name: Optional[str] = None
     is_active: bool
     created_at: datetime
     role: Optional[RoleOut] = None

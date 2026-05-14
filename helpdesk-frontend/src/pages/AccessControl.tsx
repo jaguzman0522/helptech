@@ -13,20 +13,26 @@ import {
   Lock
 } from 'lucide-react';
 
+import RoleModal from '../components/RoleModal';
+import UserModal from '../components/UserModal';
+
 interface Role {
-  id: number;
+  id?: number;
   name: string;
   description: string;
   permissions: Record<string, string[]>;
-  is_system: boolean;
+  is_system?: boolean;
 }
 
 interface User {
-  id: number;
-  user_code: string;
+  id?: number;
+  user_code?: string;
+  username: string;
   full_name: string;
   email: string;
-  role_name: string;
+  password?: string;
+  role_name?: string;
+  role_id: number;
   is_active: boolean;
 }
 
@@ -35,7 +41,11 @@ export default function AccessControl() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const { token, hasPermission } = useAuth();
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const { token } = useAuth();
 
   useEffect(() => {
     fetchData();
@@ -57,6 +67,65 @@ export default function AccessControl() {
     }
   };
 
+  const ensureRoles = async () => {
+    if (roles.length === 0) {
+      try {
+        const response = await axios.get('http://localhost:8001/api/v1/roles/', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setRoles(response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Error fetching roles:', error);
+      }
+    }
+    return roles;
+  };
+
+  const handleSaveRole = async (roleData: Role) => {
+    try {
+      const method = roleData.id ? 'PATCH' : 'POST';
+      const url = roleData.id 
+        ? `http://localhost:8001/api/v1/roles/${roleData.id}` 
+        : 'http://localhost:8001/api/v1/roles/';
+      
+      await axios({
+        method,
+        url,
+        data: roleData,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setIsRoleModalOpen(false);
+      fetchData();
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Error al guardar el rol';
+      alert(msg);
+    }
+  };
+
+  const handleSaveUser = async (userData: User) => {
+    try {
+      const method = userData.id ? 'PATCH' : 'POST';
+      const url = userData.id 
+        ? `http://localhost:8001/api/v1/users/${userData.id}` 
+        : 'http://localhost:8001/api/v1/users/register'; // El backend usa /register para nuevos
+      
+      await axios({
+        method,
+        url,
+        data: userData,
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      setIsUserModalOpen(false);
+      fetchData();
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Error al guardar el usuario';
+      alert(msg);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -64,7 +133,19 @@ export default function AccessControl() {
           <h1 className="text-2xl font-bold text-slate-900 text-premium">Control de Accesos</h1>
           <p className="text-slate-500 text-sm">Gestiona usuarios, roles y la matriz de permisos del sistema.</p>
         </div>
-        <button className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+        <button 
+          onClick={async () => {
+            if (activeTab === 'roles') {
+              setSelectedRole(null);
+              setIsRoleModalOpen(true);
+            } else {
+              await ensureRoles();
+              setSelectedUser(null);
+              setIsUserModalOpen(true);
+            }
+          }}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+        >
           <Plus className="w-4 h-4" /> 
           {activeTab === 'users' ? 'Nuevo Usuario' : 'Nuevo Rol'}
         </button>
@@ -130,7 +211,7 @@ export default function AccessControl() {
                       </div>
                       <div>
                         <p className="font-bold text-slate-900">{user.full_name}</p>
-                        <p className="text-xs text-slate-500">{user.user_code} • {user.email}</p>
+                        <p className="text-xs text-slate-500">{user.user_code} • {user.username || user.email}</p>
                       </div>
                     </div>
                   </td>
@@ -145,7 +226,15 @@ export default function AccessControl() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar Usuario">
+                    <button 
+                      onClick={async () => {
+                        await ensureRoles();
+                        setSelectedUser(user);
+                        setIsUserModalOpen(true);
+                      }}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
+                      title="Editar Usuario"
+                    >
                       <Edit className="w-4 h-4" />
                     </button>
                   </td>
@@ -163,12 +252,19 @@ export default function AccessControl() {
                   <td className="px-6 py-4 text-sm text-slate-500">{role.description || 'Sin descripción'}</td>
                   <td className="px-6 py-4">
                     <span className="text-xs font-bold text-blue-600">
-                      {Object.keys(role.permissions).length} Módulos
+                      {Object.keys(role.permissions || {}).length} Módulos
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Editar Matriz de Permisos">
+                      <button 
+                        onClick={() => {
+                          setSelectedRole(role);
+                          setIsRoleModalOpen(true);
+                        }}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" 
+                        title="Editar Matriz de Permisos"
+                      >
                         <Edit className="w-4 h-4" />
                       </button>
                       {!role.is_system && (
@@ -184,6 +280,22 @@ export default function AccessControl() {
           </tbody>
         </table>
       </div>
+
+      <RoleModal 
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+        onSave={handleSaveRole}
+        role={selectedRole}
+        currentUserEmail={(useAuth() as any).user?.email}
+      />
+
+      <UserModal 
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        onSave={handleSaveUser}
+        user={selectedUser}
+        roles={roles}
+      />
     </div>
   );
 }

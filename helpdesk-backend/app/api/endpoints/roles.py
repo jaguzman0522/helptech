@@ -5,11 +5,12 @@ from typing import List
 
 from app.core.database import get_db
 from app.models.user import User, Role
+from app.schemas.user import RoleOut
 from app.api import deps
 
 router = APIRouter()
 
-@router.get("/", response_model=List[dict])
+@router.get("/", response_model=List[RoleOut])
 async def list_roles(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(deps.get_current_user),
@@ -55,7 +56,10 @@ async def update_role(
     if not db_role:
         raise HTTPException(status_code=404, detail="Rol no encontrado")
     
-    if db_role.is_system:
+    # Solo el SuperAdmin puede editar roles de sistema para configurarlos inicialmente
+    is_super_admin = current_user.email == "aguzman0522@gmail.com"
+    
+    if db_role.is_system and not is_super_admin:
         raise HTTPException(status_code=403, detail="No se pueden modificar roles del sistema")
 
     for key, value in role_in.items():

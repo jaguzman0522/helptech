@@ -1,66 +1,53 @@
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import select
-from app.core.database import Base
-from app.models.user import User, Company
-from app.models.inventory import Product, WarrantyTemplate, PurchaseOrder, PurchaseOrderItem, Warehouse, Assignment
-from app.models.ticket import Ticket, Department, Category
-from app.models.webhook_log import WebhookLog
-from passlib.context import CryptContext
+from sqlalchemy import text
+from app.core.database import engine
+from app.core.security import get_password_hash
 
-# Configuración de Seguridad
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-DATABASE_URL = "postgresql+asyncpg://helpdesk:helpdesk_secret@db:5432/helpdesk"
-
-async def sync_and_reset():
-    engine = create_async_engine(DATABASE_URL)
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
-
-    print("🔄 Sincronizando estructura de base de datos...")
+async def total_reset():
+    print("🚀 INICIANDO AUDITORÍA Y RESET DE EMERGENCIA...")
     async with engine.begin() as conn:
-        # Esto creará las tablas nuevas (como warranty_templates y webhook_logs)
-        await conn.run_sync(Base.metadata.create_all)
-    
-    async with async_session() as session:
-        print("🔑 Reseteando acceso para aguzman0522@gmail.com...")
-        
-        # 1. Asegurar que la empresa existe
-        res_company = await session.execute(select(Company).where(Company.id == 1))
-        company = res_company.scalar_one_or_none()
-        if not company:
-            company = Company(id=1, name="HelpDesk TI Master")
-            session.add(company)
-            await session.commit()
+        try:
+            # 1. Asegurar esquema básico
+            print("📏 Verificando columnas...")
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100) UNIQUE;"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS user_code VARCHAR(50) UNIQUE;"))
+            
+            # 2. Asegurar Empresa (Sin forzar ID si ya existe)
+            print("🏢 Asegurando empresa...")
+            await conn.execute(text("INSERT INTO companies (name) VALUES ('Guzman Tech') ON CONFLICT DO NOTHING;"))
+            company_id = (await conn.execute(text("SELECT id FROM companies LIMIT 1;"))).scalar()
 
-        # 2. Buscar o Crear Usuario
-        result = await session.execute(select(User).where(User.email == "aguzman0522@gmail.com"))
-        user = result.scalar_one_or_none()
-        
-        # Contraseña Maestra Temporal: "admin123" (puedes cambiarla luego en el perfil)
-        new_hashed_password = pwd_context.hash("admin123")
-        
-        if user:
-            user.hashed_password = new_hashed_password
-            user.role = "superadmin"
-            user.is_active = True
-            user.company_id = 1
-            print("✅ Usuario existente actualizado con contraseña: admin123")
-        else:
-            user = User(
-                email="aguzman0522@gmail.com",
-                hashed_password=new_hashed_password,
-                full_name="Alberto Guzman",
-                role="superadmin",
-                is_active=True,
-                company_id=1
-            )
-            session.add(user)
-            print("✨ Nuevo SuperAdmin creado con contraseña: admin123")
-        
-        await session.commit()
-    
-    print("🚀 Sincronización completada. Ya puedes iniciar sesión.")
+            # 3. Asegurar Roles
+            print("🔑 Asegurando roles de sistema...")
+            await conn.execute(text("INSERT INTO roles (name, is_system) VALUES ('SuperAdmin', true) ON CONFLICT DO NOTHING;"))
+            role_id = (await conn.execute(text("SELECT id FROM roles WHERE name='SuperAdmin' LIMIT 1;"))).scalar()
+
+            # 4. RESET TOTAL DEL USUARIO MAESTRO
+            print("👤 Re-instalando usuario administrador...")
+            email = "aguzman0522@gmail.com"
+            username = "aguzman"
+            password = "Guzm@n0522"
+            hashed_pw = get_password_hash(password)
+            
+            # Borramos si existe para evitar conflictos y asegurar datos limpios
+            await conn.execute(text(f"DELETE FROM users WHERE email = '{email}';"))
+            
+            await conn.execute(text(f"""
+                INSERT INTO users (user_code, username, email, hashed_password, full_name, role_name, role_id, company_id, is_active)
+                VALUES ('USR-0001', '{username}', '{email}', '{hashed_pw}', 'Alberto Guzman', 'admin', {role_id}, {company_id}, true);
+            """))
+            
+            print(f"\n✅ AUDITORÍA COMPLETADA CON ÉXITO")
+            print(f"-----------------------------------")
+            print(f"USUARIO: {username} (o {email})")
+            print(f"CLAVE:   {password}")
+            print(f"-----------------------------------")
+            print("Ya puedes intentar el login.")
+
+        except Exception as e:
+            print(f"❌ ERROR CRÍTICO EN AUDITORÍA: {e}")
+            import traceback
+            traceback.print_exc()
 
 if __name__ == "__main__":
-    asyncio.run(sync_and_reset())
+    asyncio.run(total_reset())
