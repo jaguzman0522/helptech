@@ -7,8 +7,6 @@ import {
   ChevronLeft, 
   Send, 
   User, 
-  Clock, 
-  MapPin, 
   Camera, 
   ShieldAlert,
   Package,

@@ -52,6 +52,11 @@ class TicketUpdate(BaseModel):
     department_id: Optional[int] = None
     category_id: Optional[int] = None
     photo_after: Optional[str] = None
+    attended_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+    resolution_text: Optional[str] = None
+    requester_signature: Optional[str] = None
+    closing_signature: Optional[str] = None
 
 class TicketOut(TicketBase):
     id: int
@@ -60,6 +65,9 @@ class TicketOut(TicketBase):
     requester_name: Optional[str] = None
     requester_dept: Optional[str] = None
     technician_id: Optional[int] = None
+    attended_at: Optional[datetime] = None
+    resolved_at: Optional[datetime] = None
+    resolution_text: Optional[str] = None
     created_at: Optional[datetime] = None
     
     class Config:
