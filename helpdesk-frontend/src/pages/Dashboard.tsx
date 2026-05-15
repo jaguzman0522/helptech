@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { API_URL, WS_URL } from '../api/config';
 import { 
   Ticket, 
   Clock, 
@@ -37,7 +38,7 @@ export default function DashboardPage() {
       fetchDashboardData();
       
       // Real-time listener for updates
-      const ws = new WebSocket(`ws://localhost:8001/api/v1/ws/${user?.id}`);
+      const ws = new WebSocket(`${WS_URL}/ws/${user?.id}`);
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'ticket_update' || data.type === 'new_ticket') {
@@ -51,10 +52,10 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       const [statsRes, ticketsRes] = await Promise.all([
-        axios.get('http://localhost:8001/api/v1/tickets/summary/stats', {
+        axios.get(`${API_URL}/tickets/summary/stats`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('http://localhost:8001/api/v1/tickets/', {
+        axios.get(`${API_URL}/tickets/`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);

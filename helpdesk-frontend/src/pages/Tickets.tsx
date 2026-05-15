@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { API_URL, WS_URL } from '../api/config';
 import { 
   Ticket as TicketIcon, 
   Plus, 
@@ -60,7 +61,7 @@ export default function TicketsPage() {
 
   const setupWebSocket = () => {
     if (!user) return;
-    const ws = new WebSocket(`ws://localhost:8001/api/v1/ws/${user.id}`);
+    const ws = new WebSocket(`${WS_URL}/ws/${user.id}`);
     
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -79,7 +80,7 @@ export default function TicketsPage() {
       if (filters.origin) params.append('origin', filters.origin);
       if (filters.source) params.append('source', filters.source);
 
-      const response = await axios.get(`http://localhost:8001/api/v1/tickets/?${params.toString()}`, {
+      const response = await axios.get(`${API_URL}/tickets/?${params.toString()}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTickets(response.data);
