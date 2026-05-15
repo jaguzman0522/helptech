@@ -18,12 +18,12 @@ interface RoleModalProps {
 }
 
 const MODULOS = [
-  { id: 'dashboard', label: 'Dashboard', actions: ['ver', 'metricas_globales'] },
-  { id: 'tickets', label: 'Tickets', actions: ['ver', 'crear', 'editar', 'eliminar', 'asignar', 'comentar'] },
-  { id: 'inventario', label: 'Inventario', actions: ['ver', 'crear', 'editar', 'eliminar', 'ajustar_stock'] },
-  { id: 'reportes', label: 'Reportes', actions: ['ver', 'exportar_pdf', 'exportar_excel'] },
-  { id: 'usuarios', label: 'Gestión de Usuarios', actions: ['ver', 'crear', 'editar', 'eliminar'] },
-  { id: 'configuracion', label: 'Configuración', actions: ['ver', 'editar_empresa', 'api_keys'] },
+  { id: 'dashboard', label: 'Dashboard', actions: ['view', 'global_metrics'] },
+  { id: 'tickets', label: 'Tickets', actions: ['view', 'create', 'edit', 'delete', 'assign', 'comment', 'print', 'ia'] },
+  { id: 'inventory', label: 'Inventario', actions: ['view', 'create', 'edit', 'delete', 'adjust_stock'] },
+  { id: 'reports', label: 'Reportes', actions: ['view', 'export_pdf', 'export_excel'] },
+  { id: 'users', label: 'Gestión de Usuarios', actions: ['view', 'create', 'edit', 'delete'] },
+  { id: 'settings', label: 'Configuración', actions: ['view', 'edit_company', 'api_keys'] },
 ];
 
 export default function RoleModal({ isOpen, onClose, onSave, role, currentUserEmail }: RoleModalProps) {

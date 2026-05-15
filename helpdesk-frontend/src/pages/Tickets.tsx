@@ -204,7 +204,7 @@ export default function TicketsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-1">
-                      {hasPermission('tickets', 'ver') && (
+                      {hasPermission('tickets', 'view') && (
                         <Link 
                           to={`/dashboard/tickets/${ticket.id}`}
                           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

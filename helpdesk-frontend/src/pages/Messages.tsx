@@ -102,8 +102,8 @@ export default function MessagesPage() {
                     {chat.ticket_title.charAt(0)}
                   </div>
                   <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                    chat.status === 'ABIERTO' ? 'bg-amber-500' : 
-                    chat.status === 'EN_PROGRESO' ? 'bg-blue-500' : 'bg-emerald-500'
+                    chat.status === 'OPEN' ? 'bg-amber-500' : 
+                    chat.status === 'IN_PROGRESS' ? 'bg-blue-500' : 'bg-emerald-500'
                   }`} />
                 </div>
 

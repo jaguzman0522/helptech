@@ -218,9 +218,10 @@ export default function TicketDetailPage() {
             <div className="flex items-center gap-3">
               <span className="text-2xl font-black text-slate-900 tracking-tight">{ticket.code}</span>
               <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-lg border shadow-sm ${
-                ticket.status === 'ABIERTO' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
-                ticket.status === 'EN_PROGRESO' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
-                'bg-emerald-50 text-emerald-700 border-emerald-100'
+                ticket.status === 'OPEN' ? 'bg-blue-50 text-blue-700 border-blue-100' : 
+                ticket.status === 'IN_PROGRESS' ? 'bg-amber-50 text-amber-700 border-amber-100' : 
+                ticket.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                'bg-slate-50 text-slate-700 border-slate-100'
               }`}>
                 {ticket.status.replace('_', ' ')}
               </span>
@@ -242,11 +243,11 @@ export default function TicketDetailPage() {
       {/* 2. Quick Action Status Bar */}
       <div className="bg-white p-2 rounded-3xl border border-slate-100 shadow-sm flex flex-wrap gap-2 print:hidden">
         {[
-          { id: 'ABIERTO', label: 'Abierto', color: 'bg-blue-600', icon: TicketIcon },
-          { id: 'EN_CAMINO', label: 'En Camino', color: 'bg-indigo-600', icon: MapPin },
-          { id: 'EN_PROGRESO', label: 'En Progreso', color: 'bg-amber-600', icon: Clock },
-          { id: 'RESUELTO', label: 'Resuelto', color: 'bg-emerald-600', icon: CheckIcon },
-          { id: 'CERRADO', label: 'Cerrado', color: 'bg-slate-900', icon: ShieldAlert },
+          { id: 'OPEN', label: 'Abierto', color: 'bg-blue-600', icon: TicketIcon },
+          { id: 'ON_WAY', label: 'En Camino', color: 'bg-indigo-600', icon: MapPin },
+          { id: 'IN_PROGRESS', label: 'En Progreso', color: 'bg-amber-600', icon: Clock },
+          { id: 'RESOLVED', label: 'Resuelto', color: 'bg-emerald-600', icon: CheckIcon },
+          { id: 'CLOSED', label: 'Cerrado', color: 'bg-slate-900', icon: ShieldAlert },
         ].map((btn) => (
           <button
             key={btn.id}

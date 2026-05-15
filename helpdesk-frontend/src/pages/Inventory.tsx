@@ -149,7 +149,7 @@ export default function Inventory() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {hasPermission('inventario', 'editar') && (
+                          {hasPermission('inventory', 'edit') && (
                             <button 
                               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                               title="Editar Activo"
