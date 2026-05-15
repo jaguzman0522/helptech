@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import { LogIn, Mail, Lock, Loader2, BrainCircuit } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useNotification } from '../context/NotificationContext';
 
 export default function LoginPage() {
@@ -148,8 +148,11 @@ export default function LoginPage() {
               )}
             </button>
 
-            <div className="pt-6 text-center">
-              <a href="#" className="text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors">¿Olvidaste tu clave maestra?</a>
+            <div className="pt-6 text-center space-y-4">
+              <Link to="/register-company" className="block w-full py-4 border-2 border-slate-100 text-slate-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all">
+                Registrar Nueva Empresa
+              </Link>
+              <a href="#" className="inline-block text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors">¿Olvidaste tu clave maestra?</a>
             </div>
           </form>
         </div>

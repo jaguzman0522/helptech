@@ -38,13 +38,23 @@ class Company(Base):
     __tablename__ = "companies"
     
     id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, index=True) # EMP-000001
     name = Column(String(255), unique=True, index=True, nullable=False)
+    slug = Column(String(255), unique=True, index=True, nullable=True)
+    plan_id = Column(String(50), default="free")
+    
     tax_id = Column(String(50), unique=True, nullable=True)
     logo_url = Column(String(500), nullable=True)
     address = Column(String(500), nullable=True)
     phone = Column(String(50), nullable=True)
-    prefix = Column(String(10), default="RND") # Prefijo para rondas/documentos
+    prefix = Column(String(10), default="RND")
+    
+    verification_token = Column(String(10), nullable=True)
+    is_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True)
+    
+    # Período de Gracia
+    trial_ends_at = Column(DateTime(timezone=True), nullable=True)
     
     # IA & Automation Settings
     auto_close_tickets = Column(Boolean, default=True)

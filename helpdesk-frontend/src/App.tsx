@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import Login from './pages/Login';
+import RegisterCompany from './pages/RegisterCompany';
 import Dashboard from './pages/Dashboard';
 import Tickets from './pages/Tickets';
 import Inventory from './pages/Inventory';
@@ -46,6 +47,7 @@ function App() {
     <Router>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register-company" element={<RegisterCompany />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/dashboard/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
         <Route path="/dashboard/tickets/new" element={<ProtectedRoute><NewTicket /></ProtectedRoute>} />

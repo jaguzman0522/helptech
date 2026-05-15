@@ -27,7 +27,7 @@ router = APIRouter()
 @router.post("/upload-evidence")
 async def upload_evidence(
     file: UploadFile = File(...),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "editar")),
 ):
     try:
         # Optimización en tiempo real: Redimensionar y Convertir a WebP
@@ -49,7 +49,7 @@ async def upload_evidence(
 @router.get("/summary/stats")
 async def get_summary_stats(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "ver")),
 ):
     from sqlalchemy import func
     # Count tickets by status for the current company
@@ -76,7 +76,7 @@ async def create_ticket(
     ticket_in: TicketCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "crear")),
 ):
     code = await get_next_sequence(db, "ticket", "TK")
     
@@ -142,7 +142,7 @@ async def list_tickets(
     origin: Optional[str] = None, # 'INTERNAL' o 'EXTERNAL'
     source: Optional[str] = None, # Nombre de la app externa
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "ver")),
 ):
     query = select(Ticket)
     
@@ -168,7 +168,7 @@ async def list_tickets(
 @router.get("/recent-chats")
 async def get_recent_chats(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "responder")),
 ):
     from app.models.ticket import ChatMessage
     # Subquery para obtener el último mensaje por ticket
@@ -205,7 +205,7 @@ async def get_recent_chats(
 async def get_ticket_document(
     ticket_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "ver")),
 ):
     ticket = await db.get(Ticket, ticket_id)
     if not ticket or ticket.company_id != current_user.company_id:
@@ -229,7 +229,7 @@ async def reasign_ticket(
     ticket_id: int,
     payload: dict,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "editar")),
 ):
     from app.models.ticket import ChatMessage, Department, Category
     
@@ -293,7 +293,7 @@ async def reasign_ticket(
                     "tecnicoAsignado": current_user.full_name
                 }
             )
-
+    
     await db.commit()
     return {"status": "success", "message": f"Ticket reasignado a {dept_name}"}
 
@@ -302,7 +302,7 @@ async def update_ticket(
     ticket_id: int,
     ticket_in: dict,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "editar")),
 ):
     ticket = await db.get(Ticket, ticket_id)
     if not ticket:
@@ -323,7 +323,7 @@ async def update_ticket(
 async def get_ticket(
     ticket_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "ver")),
 ):
     result = await db.execute(select(Ticket).where(Ticket.id == ticket_id))
     ticket = result.scalar_one_or_none()
@@ -336,7 +336,7 @@ async def send_chat_message(
     ticket_id: int,
     message_in: dict,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "responder")),
 ):
     from app.models.ticket import ChatMessage
     db_message = ChatMessage(
@@ -353,7 +353,7 @@ async def send_chat_message(
 async def list_chat_messages(
     ticket_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("tickets", "ver")),
 ):
     from app.models.ticket import ChatMessage
     result = await db.execute(
@@ -369,7 +369,7 @@ async def upload_evidence(
     type: str, # "before" o "after"
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user)
+    current_user: User = Depends(deps.check_permission("tickets", "editar"))
 ):
     """
     Sube evidencia fotográfica (Antes/Después) para un ticket.

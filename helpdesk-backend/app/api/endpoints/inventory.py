@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get("/", response_model=List[dict])
 async def list_products(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("inventory", "ver")),
 ):
     query = select(Product).where(Product.company_id == current_user.company_id)
     result = await db.execute(query)
@@ -47,7 +47,7 @@ async def list_products(
 async def get_asset_360(
     identifier: str,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("inventory", "ver")),
 ):
     from sqlalchemy import or_
     from app.models.ticket import Ticket
@@ -92,7 +92,7 @@ from app.services.document_service import document_service
 async def get_po_document(
     po_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("inventory", "ver")),
 ):
     from app.models.inventory import PurchaseOrder, PurchaseOrderItem, Provider
     po = await db.get(PurchaseOrder, po_id)
@@ -134,7 +134,7 @@ import uuid
 async def create_product(
     product_in: dict, # Simplified for example, should use schema
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("inventory", "crear")),
 ):
     code = await get_next_code(db, "Product", "PRD")
     
@@ -178,7 +178,7 @@ async def create_product(
 async def create_purchase_order(
     po_in: dict,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("inventory", "editar")),
 ):
     from app.models.inventory import PurchaseOrder, PurchaseOrderItem
     code = await get_next_code(db, "PurchaseOrder", "PO")
@@ -209,8 +209,39 @@ async def create_purchase_order(
 async def create_movement(
     mov_in: dict,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(deps.get_current_user),
+    current_user: User = Depends(deps.check_permission("inventory", "consumir")),
 ):
+    code = await get_next_code(db, "Movement", "MOV")
+    
+    # Atomic stock update logic
+    result = await db.execute(select(Product).where(Product.id == mov_in.get("productoId")))
+    product = result.scalar_one_or_none()
+    
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+        
+    if mov_in.get("tipo") == "SALIDA" and product.stock_total < mov_in.get("cantidad"):
+        raise HTTPException(status_code=400, detail="Insufficient stock")
+        
+    if mov_in.get("tipo") == "ENTRADA":
+        product.stock_total += mov_in.get("cantidad")
+    else:
+        product.stock_total -= mov_in.get("cantidad")
+        
+    db_movement = InventoryMovement(
+        code=code,
+        product_id=mov_in.get("productoId"),
+        warehouse_id=mov_in.get("almacenId"),
+        type=mov_in.get("tipo"),
+        quantity=mov_in.get("cantidad"),
+        reason=mov_in.get("motivo"),
+        ticket_id=mov_in.get("ticketId"),
+        user_id=current_user.id
+    )
+    
+    db.add(db_movement)
+    await db.commit()
+    return {"status": "success", "code": code, "new_stock": product.stock_total}
     code = await get_next_code(db, "Movement", "MOV")
     
     # Atomic stock update logic

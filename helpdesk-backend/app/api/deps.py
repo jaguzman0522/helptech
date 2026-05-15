@@ -56,3 +56,28 @@ def check_role(roles: list[str]):
             )
         return current_user
     return role_checker
+
+def check_permission(module: str, action: str):
+    async def permission_checker(current_user: User = Depends(get_current_user)):
+        if not current_user.role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User has no role assigned"
+            )
+        
+        permissions = current_user.role.permissions or {}
+        
+        # 1. Check SuperAdmin / Total Access
+        if permissions.get("all") == ["all"]:
+            return current_user
+            
+        # 2. Check Specific Permission
+        module_permissions = permissions.get(module, [])
+        if action in module_permissions or "all" in module_permissions:
+            return current_user
+            
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Insufficient permissions for {action} in module {module}"
+        )
+    return permission_checker
