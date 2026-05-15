@@ -18,7 +18,8 @@ import {
   Clock,
   CheckCircle2 as CheckIcon,
   Circle,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react';
 
 import MaterialConsumptionModal from '../components/tickets/MaterialConsumptionModal';
