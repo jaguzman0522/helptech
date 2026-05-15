@@ -8,18 +8,20 @@ import {
   Send, 
   User, 
   Camera, 
-  ShieldAlert,
-  Package,
-  CheckCircle,
-  UserCheck,
-  Printer as PrinterIcon,
-  Calendar,
-  MapPin,
-  Clock,
-  CheckCircle2 as CheckIcon,
-  Circle,
-  ArrowRight,
-  Loader2
+  ShieldAlert, 
+  Package, 
+  CheckCircle, 
+  UserCheck, 
+  Printer as PrinterIcon, 
+  Calendar, 
+  MapPin, 
+  Clock, 
+  CheckCircle2 as CheckIcon, 
+  Circle, 
+  ArrowRight, 
+  Loader2,
+  Ticket as TicketIcon,
+  Bot
 } from 'lucide-react';
 
 import MaterialConsumptionModal from '../components/tickets/MaterialConsumptionModal';
