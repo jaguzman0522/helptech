@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { API_URL, BASE_URL } from '../api/config';
 import { 
   ChevronLeft, 
   Send, 
@@ -52,10 +53,10 @@ export default function TicketDetailPage() {
   const fetchTicketData = async () => {
     try {
       const [ticketRes, messagesRes] = await Promise.all([
-        axios.get(`http://localhost:8001/api/v1/tickets/${id}`, {
+        axios.get(`${API_URL}/tickets/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`http://localhost:8001/api/v1/tickets/${id}/messages`, {
+        axios.get(`${API_URL}/tickets/${id}/messages`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -70,7 +71,7 @@ export default function TicketDetailPage() {
 
   const fetchMessages = async () => {
     try {
-      const res = await axios.get(`http://localhost:8001/api/v1/tickets/${id}/messages`, {
+      const res = await axios.get(`${API_URL}/tickets/${id}/messages`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessages(res.data);
@@ -84,7 +85,7 @@ export default function TicketDetailPage() {
     if (!newMessage.trim()) return;
     setSending(true);
     try {
-      await axios.post(`http://localhost:8001/api/v1/tickets/${id}/messages`, {
+      await axios.post(`${API_URL}/tickets/${id}/messages`, {
         message: newMessage
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -105,7 +106,7 @@ export default function TicketDetailPage() {
     formData.append('file', file);
 
     try {
-      await axios.post(`http://localhost:8001/api/v1/tickets/${id}/evidence?type=${type}`, formData, {
+      await axios.post(`${API_URL}/tickets/${id}/evidence?type=${type}`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data'
@@ -181,7 +182,7 @@ export default function TicketDetailPage() {
                 <p className="text-[10px] font-bold text-slate-500 uppercase text-center">Antes</p>
                 {ticket.photo_before ? (
                   <img 
-                    src={`http://localhost:8001${ticket.photo_before}`} 
+                    src={`${BASE_URL}${ticket.photo_before}`} 
                     className="w-full h-24 object-cover rounded-xl border border-slate-200"
                   />
                 ) : (
@@ -197,7 +198,7 @@ export default function TicketDetailPage() {
                 <p className="text-[10px] font-bold text-slate-500 uppercase text-center">Después</p>
                 {ticket.photo_after ? (
                   <img 
-                    src={`http://localhost:8001${ticket.photo_after}`} 
+                    src={`${BASE_URL}${ticket.photo_after}`} 
                     className="w-full h-24 object-cover rounded-xl border border-slate-200"
                   />
                 ) : (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import { API_URL } from '../api/config';
 import { 
   Send, 
   Brain, 
@@ -49,7 +50,7 @@ export default function NewTicketPage() {
 
   const fetchMetadata = async () => {
     try {
-      const res = await axios.get('http://localhost:8001/api/v1/settings/departments', {
+      const res = await axios.get(`${API_URL}/settings/departments`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setDepartments(res.data);
@@ -64,7 +65,7 @@ export default function NewTicketPage() {
       return;
     }
     try {
-      const res = await axios.get(`http://localhost:8001/api/v1/settings/categories/${deptId}`, {
+      const res = await axios.get(`${API_URL}/settings/categories/${deptId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCategories(res.data);
@@ -95,7 +96,7 @@ export default function NewTicketPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('http://localhost:8001/api/v1/tickets/', {
+      await axios.post(`${API_URL}/tickets/`, {
         ...formData,
         department_id: formData.department_id ? parseInt(formData.department_id) : null,
         category_id: formData.category_id ? parseInt(formData.category_id) : null,
@@ -259,7 +260,7 @@ export default function NewTicketPage() {
                     
                     try {
                       showNotification('success', 'Optimizando...', 'Estamos procesando tu imagen para mayor fluidez.');
-                      const res = await axios.post('http://localhost:8001/api/v1/tickets/upload-evidence', formDataUpload, {
+                      const res = await axios.post(`${API_URL}/tickets/upload-evidence`, formDataUpload, {
                         headers: { 
                           'Authorization': `Bearer ${token}`,
                           'Content-Type': 'multipart/form-data'

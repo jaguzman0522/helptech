@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Package, Plus, Search, Filter, ArrowUpRight, ArrowDownLeft, Settings, History, Tag, ShoppingCart, Edit, QrCode } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import { API_URL } from '../api/config';
 import { useAuth } from '../context/AuthContext';
 import NuevoProductoForm from '../components/inventory/NuevoProductoForm';
 import MovementModal from '../components/inventory/MovementModal';
@@ -16,7 +17,7 @@ export default function Inventory() {
   const { data: products, isLoading } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const res = await axios.get('http://localhost:8001/api/v1/inventory/', {
+      const res = await axios.get(`${API_URL}/inventory/`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return res.data;
