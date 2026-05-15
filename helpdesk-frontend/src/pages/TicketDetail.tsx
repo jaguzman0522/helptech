@@ -45,6 +45,7 @@ export default function TicketDetailPage() {
   const [technicians, setTechnicians] = useState<any[]>([]);
   const [updating, setUpdating] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchTicketData();
@@ -58,7 +59,9 @@ export default function TicketDetailPage() {
   }, [messages]);
 
   const scrollToBottom = () => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   const fetchTicketData = async () => {
@@ -414,7 +417,10 @@ export default function TicketDetailPage() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30">
+            <div 
+              ref={messagesContainerRef}
+              className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/30"
+            >
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex ${msg.user_id === user?.id ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[80%] p-4 rounded-2xl shadow-sm ${
