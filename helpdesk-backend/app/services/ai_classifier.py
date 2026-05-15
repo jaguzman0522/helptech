@@ -28,17 +28,17 @@ class AIClassifier:
             return rule_result
 
         prompt = f"""
-        Eres un experto en clasificación de tickets de soporte técnico para el sistema VentaSmart ERP.
-        Analiza el siguiente reporte y clasifícalo.
+        You are an expert in technical support ticket classification for the VentaSmart ERP system.
+        Analyze the following report and classify it.
         
-        Reporte: "{description}"
+        Report: "{description}"
         
-        Responde ÚNICAMENTE en formato JSON:
+        Respond ONLY in JSON format:
         {{
-            "departamento_id": int, (1: TI, 2: Mantenimiento, 3: Servicios)
-            "categoria_id": int, (8: Software, 9: Hardware, 10: Redes, 1: Electricidad, 2: Infra)
-            "prioridad": "BAJA" | "MEDIA" | "ALTA" | "CRITICA",
-            "razon": "explicación breve"
+            "department_id": int, (1: IT, 2: Maintenance, 3: Services)
+            "category_id": int, (8: Software, 9: Hardware, 10: Networks, 1: Electricity, 2: Infra)
+            "priority": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",
+            "reason": "brief explanation"
         }}
         """
         
@@ -47,8 +47,8 @@ class AIClassifier:
             # Limpiar markdown si existe
             clean_json = response.text.replace('```json', '').replace('```', '').strip()
             data = json.loads(clean_json)
-            data["confianza"] = 95
-            data["metodo"] = "ia-gemini"
+            data["confidence"] = 95
+            data["method"] = "ia-gemini"
             return data
         except Exception as e:
             print(f"Error AI Classifier: {e}")
@@ -65,7 +65,7 @@ async def classify_ticket_task(ticket_id: int, description: str, db_factory):
     async with db_factory() as db:
         ticket = await db.get(Ticket, ticket_id)
         if ticket:
-            ticket.department_id = result.get("departamento_id")
-            ticket.category_id = result.get("categoria_id")
-            ticket.priority = result.get("prioridad", ticket.priority)
+            ticket.department_id = result.get("department_id")
+            ticket.category_id = result.get("category_id")
+            ticket.priority = result.get("priority", ticket.priority)
             await db.commit()

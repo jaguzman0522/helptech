@@ -24,8 +24,8 @@ async def seed_superadmin():
         # 2. Create System Roles
         roles_data = [
             {"name": "Admin", "permissions": {"all": ["all"]}, "is_system": True},
-            {"name": "Technician", "permissions": {"tickets": ["ver", "editar", "responder"]}, "is_system": True},
-            {"name": "User", "permissions": {"tickets": ["crear", "ver"]}, "is_system": True},
+            {"name": "Technician", "permissions": {"tickets": ["view", "edit", "reply"]}, "is_system": True},
+            {"name": "User", "permissions": {"tickets": ["create", "view"]}, "is_system": True},
         ]
         
         roles_objs = {}
@@ -39,7 +39,7 @@ async def seed_superadmin():
             roles_objs[r_data["name"]] = role
 
         # 3. Create Departments
-        depts_data = ["Soporte TI", "Mantenimiento", "Servicios Generales"]
+        depts_data = ["IT Support", "Maintenance", "General Services"]
         depts_objs = {}
         for d_name in depts_data:
             res = await db.execute(select(Department).where(Department.name == d_name, Department.company_id == company.id))
@@ -62,7 +62,7 @@ async def seed_superadmin():
                 role_id=roles_objs["Admin"].id,
                 is_active=True,
                 company_id=company.id,
-                department_id=depts_objs["Soporte TI"].id,
+                department_id=depts_objs["IT Support"].id,
                 user_code="USR-0001"
             )
             db.add(user)
@@ -72,7 +72,7 @@ async def seed_superadmin():
             user.user_code = "USR-0001"
 
         await db.commit()
-        print("SuperAdmin, Roles y Estructura base creados/actualizados con éxito.")
+        print("SuperAdmin, Roles, and Base Structure created/updated successfully.")
 
 if __name__ == "__main__":
     asyncio.run(seed_superadmin())

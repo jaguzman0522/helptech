@@ -3,50 +3,50 @@ from typing import List, Dict, Optional
 from pydantic import BaseModel
 
 class Keyword(BaseModel):
-    termino: str
-    peso: float = 1.0
+    term: str
+    weight: float = 1.0
 
-class CategoriaRegla(BaseModel):
+class CategoryRule(BaseModel):
     id: int
-    nombre: str
+    name: str
     keywords: List[Keyword]
 
-class DepartamentoRegla(BaseModel):
+class DepartmentRule(BaseModel):
     id: int
-    nombre: str
-    categorias: List[CategoriaRegla]
+    name: str
+    categories: List[CategoryRule]
 
-# REGLAS MIGRADAS Y MEJORADAS
-REGLAS_BASE = [
-    DepartamentoRegla(
-        id=1, nombre="TI",
-        categorias=[
-            CategoriaRegla(id=3, nombre="Hardware / Impresión", keywords=[
-                Keyword(termino='impresion', peso=2), Keyword(termino='toner', peso=2),
-                Keyword(termino='computadora', peso=2), Keyword(termino='pantalla', peso=2),
-                Keyword(termino='servidor', peso=3), Keyword(termino='ups', peso=2)
+# BASE RULES
+BASE_RULES = [
+    DepartmentRule(
+        id=1, name="IT",
+        categories=[
+            CategoryRule(id=3, name="Hardware / Printing", keywords=[
+                Keyword(term='impresion', weight=2), Keyword(term='toner', weight=2),
+                Keyword(term='computadora', weight=2), Keyword(term='pantalla', weight=2),
+                Keyword(term='servidor', weight=3), Keyword(term='ups', weight=2)
             ]),
-            CategoriaRegla(id=2, nombre="Redes", keywords=[
-                Keyword(termino='wifi', peso=3), Keyword(termino='internet', peso=3),
-                Keyword(termino='lento', peso=2), Keyword(termino='conexion', peso=2)
+            CategoryRule(id=2, name="Networks", keywords=[
+                Keyword(term='wifi', weight=3), Keyword(term='internet', weight=3),
+                Keyword(term='lento', weight=2), Keyword(term='conexion', weight=2)
             ]),
-            CategoriaRegla(id=4, nombre="Software / Sistema", keywords=[
-                Keyword(termino='ventasmart', peso=5), Keyword(termino='error', peso=1),
-                Keyword(termino='login', peso=2), Keyword(termino='factura', peso=3),
-                Keyword(termino='inventario', peso=3), Keyword(termino='caja', peso=4)
+            CategoryRule(id=4, name="Software / System", keywords=[
+                Keyword(term='ventasmart', weight=5), Keyword(term='error', weight=1),
+                Keyword(term='login', weight=2), Keyword(term='factura', weight=3),
+                Keyword(term='inventario', weight=3), Keyword(term='caja', weight=4)
             ])
         ]
     ),
-    DepartamentoRegla(
-        id=2, nombre="Mantenimiento",
-        categorias=[
-            CategoriaRegla(id=7, nombre="Electricidad", keywords=[
-                Keyword(termino='luz', peso=2), Keyword(termino='corto', peso=3),
-                Keyword(termino='breaker', peso=3), Keyword(termino='voltaje', peso=2)
+    DepartmentRule(
+        id=2, name="Maintenance",
+        categories=[
+            CategoryRule(id=7, name="Electricity", keywords=[
+                Keyword(term='luz', weight=2), Keyword(term='corto', weight=3),
+                Keyword(term='breaker', weight=3), Keyword(term='voltaje', weight=2)
             ]),
-            CategoriaRegla(id=8, nombre="Climatización", keywords=[
-                Keyword(termino='aire', peso=3), Keyword(termino='frio', peso=2),
-                Keyword(termino='ac', peso=3), Keyword(termino='calor', peso=2)
+            CategoryRule(id=8, name="HVAC", keywords=[
+                Keyword(term='aire', weight=3), Keyword(term='frio', weight=2),
+                Keyword(term='ac', weight=3), Keyword(term='calor', weight=2)
             ])
         ]
     )
@@ -54,65 +54,67 @@ REGLAS_BASE = [
 
 class RuleClassifier:
     def __init__(self):
-        # Palabras de Pánico (Prioridad Crítica Inmediata)
+        # Panic Words (Immediate High Priority)
         self.PANIC_WORDS = {
-            "humo": "CRITICA", "fuego": "CRITICA", "incendio": "CRITICA",
-            "corto": "CRITICA", "inundacion": "CRITICA", "explosion": "CRITICA",
-            "robado": "ALTA", "urgente": "ALTA", "bloqueado": "ALTA"
+            "humo": "CRITICAL", "fuego": "CRITICAL", "incendio": "CRITICAL",
+            "corto": "CRITICAL", "inundacion": "CRITICAL", "explosion": "CRITICAL",
+            "robado": "HIGH", "urgente": "HIGH", "bloqueado": "HIGH"
         }
 
-    def normalizar(self, texto: str) -> str:
-        texto = texto.lower()
-        texto = re.sub(r'[áéíóú]', lambda x: {'á':'a','é':'e','í':'i','ó':'o','ú':'u'}[x.group()], texto)
-        return re.sub(r'[^a-z0-9\s]', ' ', texto)
+    def normalize(self, text: str) -> str:
+        text = text.lower()
+        text = re.sub(r'[áéíóú]', lambda x: {'á':'a','é':'e','í':'i','ó':'o','ú':'u'}[x.group()], text)
+        return re.sub(r'[^a-z0-9\s]', ' ', text)
 
-    def obtener_raiz(self, palabra: str) -> str:
-        if len(palabra) > 4:
-            return palabra[:int(len(palabra) * 0.7)]
-        return palabra
+    def get_stem(self, word: str) -> str:
+        if len(word) > 4:
+            return word[:int(len(word) * 0.7)]
+        return word
 
-    def clasificar(self, texto: str) -> Dict:
-        texto_norm = self.normalizar(texto)
-        palabras_ticket = texto_norm.split()
+    def classify(self, text: str) -> Dict:
+        text_norm = self.normalize(text)
+        ticket_words = text_norm.split()
         
-        mejor_depto = 1
-        mejor_cat = 8
-        puntuacion_max = 0
-        prioridad_detectada = "MEDIA"
+        best_depto = 1
+        best_cat = 8
+        max_score = 0
+        detected_priority = "MEDIUM"
 
-        # 1. Filtro de Pánico (Prioridad)
-        for palabra in palabras_ticket:
-            if palabra in self.PANIC_WORDS:
-                prioridad_detectada = self.PANIC_WORDS[palabra]
+        # 1. Panic Filter
+        for word in ticket_words:
+            if word in self.PANIC_WORDS:
+                detected_priority = self.PANIC_WORDS[word]
 
-        # 2. Scoring con Raíces
-        for depto in REGLAS_BASE:
-            for cat in depto.categorias:
-                puntos = 0
+        # 2. Scoring with Stems
+        for depto in BASE_RULES:
+            for cat in depto.categories:
+                score = 0
                 for kw in cat.keywords:
-                    termino_norm = self.normalizar(kw.termino)
-                    # Coincidencia Exacta
-                    if termino_norm in texto_norm:
-                        puntos += kw.peso
-                    # Coincidencia Parcial (Raíz)
+                    term_norm = self.normalize(kw.term)
+                    # Exact Match
+                    if term_norm in text_norm:
+                        score += kw.weight
+                    # Partial Match (Stem)
                     else:
-                        raiz = self.obtener_raiz(termino_norm)
-                        if raiz in texto_norm:
-                            puntos += kw.peso * 0.5
+                        stem = self.get_stem(term_norm)
+                        if stem in text_norm:
+                            score += kw.weight * 0.5
                 
-                if puntos > puntuacion_max:
-                    puntuacion_max = puntos
-                    mejor_depto = depto.id
-                    mejor_cat = cat.id
+                if score > max_score:
+                    max_score = score
+                    best_depto = depto.id
+                    best_cat = cat.id
 
-        confianza = min(100, int((puntuacion_max / 5) * 100)) if puntuacion_max > 0 else 0
+        confidence = min(100, int((max_score / 5) * 100)) if max_score > 0 else 0
         
         return {
-            "departamento_id": mejor_depto,
-            "categoria_id": mejor_cat,
-            "prioridad": prioridad_detectada,
-            "confianza": confianza,
-            "metodo": "reglas_deterministas"
+            "department_id": best_depto,
+            "category_id": best_cat,
+            "priority": detected_priority,
+            "confidence": confidence,
+            "method": "deterministic_rules"
         }
+
+rule_classifier = RuleClassifier()
 
 rule_classifier = RuleClassifier()

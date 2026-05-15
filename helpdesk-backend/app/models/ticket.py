@@ -5,17 +5,17 @@ from app.core.database import Base
 import enum
 
 class TicketStatus(str, enum.Enum):
-    OPEN = "ABIERTO"
-    ON_WAY = "EN_CAMINO"
-    IN_PROGRESS = "EN_PROGRESO"
-    RESOLVED = "RESUELTO"
-    CLOSED = "CERRADO"
+    OPEN = "OPEN"
+    ON_WAY = "ON_WAY"
+    IN_PROGRESS = "IN_PROGRESS"
+    RESOLVED = "RESOLVED"
+    CLOSED = "CLOSED"
 
 class TicketPriority(str, enum.Enum):
-    LOW = "BAJA"
-    MEDIUM = "MEDIA"
-    HIGH = "ALTA"
-    CRITICAL = "CRITICA"
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
 
 class Department(Base):
     __tablename__ = "departments"

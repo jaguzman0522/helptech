@@ -97,12 +97,13 @@ export default function TicketDetailPage() {
   const handleUpdateStatus = async (newStatus: string) => {
     setUpdating(true);
     const data: any = { status: newStatus };
+    const now = new Date().toISOString();
     
     // Auto-fill timeline dates
-    if (newStatus === 'EN_CAMINO' || newStatus === 'EN_PROGRESO') {
-      if (!ticket.attended_at) data.attended_at = new Date().toISOString();
-    } else if (newStatus === 'RESUELTO') {
-      if (!ticket.resolved_at) data.resolved_at = new Date().toISOString();
+    if (newStatus === 'ON_WAY' || newStatus === 'IN_PROGRESS') {
+      if (!ticket.attended_at) data.attended_at = now;
+    } else if (newStatus === 'RESOLVED') {
+      if (!ticket.resolved_at) data.resolved_at = now;
     }
 
     try {
