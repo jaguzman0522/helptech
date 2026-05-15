@@ -60,7 +60,14 @@ class Ticket(Base):
     # Evidence & Closure
     photo_before = Column(String(500), nullable=True)
     photo_after = Column(String(500), nullable=True)
-    closing_signature = Column(String(500), nullable=True)
+    # Timeline
+    attended_at = Column(DateTime(timezone=True), nullable=True)
+    resolved_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Closure
+    resolution_text = Column(Text, nullable=True)
+    closing_signature = Column(String(500), nullable=True) # Tech signature
+    requester_signature = Column(String(500), nullable=True) # User signature
     
     # Geolocation
     lat = Column(Float, nullable=True)
