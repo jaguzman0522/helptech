@@ -29,17 +29,17 @@ interface Ticket {
 }
 
 const statusStyles: Record<string, string> = {
-  open: 'bg-blue-50 text-blue-700 border-blue-100',
-  in_progress: 'bg-amber-50 text-amber-700 border-amber-100',
-  resolved: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-  closed: 'bg-slate-50 text-slate-700 border-slate-100',
+  OPEN: 'bg-blue-50 text-blue-700 border-blue-100',
+  IN_PROGRESS: 'bg-amber-50 text-amber-700 border-amber-100',
+  RESOLVED: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+  CLOSED: 'bg-slate-50 text-slate-700 border-slate-100',
 };
 
 const priorityIcons: Record<string, any> = {
-  low: { icon: Clock, color: 'text-slate-400' },
-  medium: { icon: AlertCircle, color: 'text-blue-500' },
-  high: { icon: AlertCircle, color: 'text-amber-500' },
-  urgent: { icon: AlertCircle, color: 'text-red-500' },
+  LOW: { icon: Clock, color: 'text-slate-400' },
+  MEDIUM: { icon: AlertCircle, color: 'text-blue-500' },
+  HIGH: { icon: AlertCircle, color: 'text-amber-500' },
+  CRITICAL: { icon: AlertCircle, color: 'text-red-500' },
 };
 
 export default function TicketsPage() {
@@ -122,9 +122,9 @@ export default function TicketsPage() {
             className="px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-600 outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Todos los Estados</option>
-            <option value="ABIERTO">Abiertos</option>
-            <option value="EN_PROCESO">En Proceso</option>
-            <option value="RESUELTO">Resueltos</option>
+            <option value="OPEN">Abiertos</option>
+            <option value="IN_PROGRESS">En Proceso</option>
+            <option value="RESOLVED">Resueltos</option>
           </select>
           
           <select 

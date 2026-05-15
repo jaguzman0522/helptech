@@ -40,7 +40,7 @@ export default function NewTicketPage() {
     description: '',
     department_id: '',
     category_id: '',
-    priority: 'MEDIA',
+    priority: 'MEDIUM',
     photo_before: ''
   });
 
@@ -83,7 +83,7 @@ export default function NewTicketPage() {
       await new Promise(r => setTimeout(r, 1500));
       setFormData(prev => ({
         ...prev,
-        priority: 'ALTA' // Mocked AI suggestion
+        priority: 'HIGH' // Mocked AI suggestion
       }));
     } finally {
       setClassifying(false);
@@ -226,7 +226,7 @@ export default function NewTicketPage() {
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2">Prioridad</label>
               <div className="grid grid-cols-4 gap-2">
-                {['BAJA', 'MEDIA', 'ALTA', 'CRITICA'].map((p) => (
+                {['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].map((p) => (
                   <button
                     key={p}
                     type="button"
