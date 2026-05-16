@@ -4,6 +4,8 @@ from typing import Optional
 class Settings(BaseSettings):
     PROJECT_NAME: str = "HelpDesk TI IA"
     PROJECT_VERSION: str = "1.0.0"
+    ENVIRONMENT: str = "development" # "development" or "production"
+    DEBUG: bool = True
     
     # DB Config
     DB_PASSWORD: str

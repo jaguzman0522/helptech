@@ -1,0 +1,1327 @@
+necesito que mejoremos el landig que tenemos del login, mismo concepto pero agreguemos la opcion de registro, confirmame cuales son los datos que tiene que colocar el usuario para registrarse. pero antes necesito que revices esta informacion, es vital para el portal superadmin
+
+Frontend SuperAdmin: Control Maestro de la Infraestructura
+1. Alcance y Responsabilidades
+El SuperAdmin tiene una visión consolidada de todas las empresas registradas. Sus acciones afectan directamente el comportamiento de los portales de clientes.
+
+A. Gestión de Empresas (Clientes)
+Aprobación/Activación: Validar empresas recién registradas.
+Suspensión: Bloquear el acceso a una empresa completa (por falta de pago o violación de términos).
+Monitoreo MRR: Ver los ingresos mensuales recurrentes generados por cada cliente y el total global.
+Alertas de Expiración: Identificar empresas cuyos planes de prueba (trial) están por vencer.
+B. Diseño de Planes y Monetización (Matrix de Funciones)
+Este es el punto más crítico. El SuperAdmin define qué "ve" el cliente final:
+
+Activación de Módulos: Puede activar o desactivar módulos enteros (IA, Inventario, Logística, API Externa) por cada plan (Free, Pro, Enterprise).
+Límites de Uso: Define cuántos usuarios y cuántos tickets puede crear una empresa según su nivel de suscripción.
+Conexión con Stripe: Asocia los IDs de precios de Stripe con los niveles del sistema para automatizar el cobro.
+C. Sistema de Promociones y "Gift Features"
+Códigos de Descuento: Crear cupones para el registro.
+Desbloqueo Temporal: Crear códigos que activan funciones premium (como la IA) por una cantidad X de días a empresas en planes gratuitos.
+2. Implementación Técnica
+Estructura de Navegación
+Las rutas están aisladas en app/(superadmin)/superadmin/, protegidas por un middleware que valida el rol SuperAdmin o Staff global.
+
+Dashboard Global: Gráficos de distribución de planes (usando recharts), ingresos estimados y alertas de control.
+Gestión de Niveles: Una matriz donde se marcan checks en los módulos permitidos. Si el SuperAdmin desmarca "Inventario" en el Plan FREE, el botón desaparece automáticamente del menú de miles de empresas.
+Comunicación Global (Broadcast)
+El SuperAdmin tiene una herramienta de Broadcast (vía Pusher). Al enviar un comunicado:
+
+Se inserta en la tabla Notificacion para todos los usuarios.
+Se dispara un evento WebSocket que muestra un banner de alerta en tiempo real en todos los portales activos del sistema.
+3. Impacto en el Portal de Clientes
+Cada acción del SuperAdmin tiene un efecto en cascada:
+
+En la UI del Cliente: El componente Sidebar y las rutas del cliente consultan los permisos del Plan asignado por el SuperAdmin. Si el plan no tiene el módulo ia, el frontend no renderiza esas opciones.
+En el Backend (API): Los middlewares de cada empresa validan los límites impuestos por el SuperAdmin. Si el límite es de 100 tickets y la empresa intenta crear el 101, el backend devuelve un error de "Límite excedido, por favor mejore su plan".
+Estado de Cuenta: Si el SuperAdmin marca una empresa como suspendida: true, el middleware de autenticación bloquea cualquier sesión activa de esa empresa de forma inmediata.
+4. Manejo de Datos y Auditoría
+Portal de Auditoría: El SuperAdmin puede ver los logs de errores de todas las empresas (ErrorLog) para detectar fallos técnicos antes de que el cliente los reporte.
+Gestión de Staff: El SuperAdmin puede crear otros usuarios de "Staff" para soporte técnico interno, con permisos limitados dentro de la consola global.
+IMPORTANT
+
+El SuperAdmin no maneja tickets individuales de las empresas, a menos que sea para soporte técnico del sistema en sí. Su enfoque es comercial y de infraestructura.
+
+Aquí tienes el código fuente detallado de todos los componentes que conforman el Portal de SuperAdmin, cubriendo desde la lógica de base de datos hasta la interfaz de usuario.
+
+1. Frontend: Vistas Principales (Next.js + Tailwind + Lucide)
+He analizado los archivos clave que maneja el SuperAdmin para el control global:
+
+Dashboard Global: 
+
+superadmin/page.tsx
+Función: Muestra métricas de MRR (Ingresos Mensuales), crecimiento de empresas y alertas de expiración.
+Tecnología: Utiliza recharts para la distribución de planes y componentes de shadcn/ui para las tarjetas de estadísticas.
+Gestión de Empresas: 
+
+empresas/page.tsx
+Función: Tabla maestra de clientes con capacidad de suspender cuentas, editar planes manualmente y monitorear la vigencia de suscripciones.
+Comportamiento: Incluye un modal de edición rápida y estados visuales para identificar clientes en riesgo de vencimiento.
+Gestión de Planes (Matrix): 
+
+planes/page.tsx
+Función: El "cerebro" del sistema multi-tenant. Permite crear niveles de suscripción y activar/desactivar módulos específicos (IA, Inventario, API) mediante una matriz de funciones.
+Flujo: Implementa un sistema de "Borradores" (Drafts) que permite al SuperAdmin previsualizar cambios antes de aplicarlos globalmente.
+Promociones y Cupones: 
+
+promociones/page.tsx
+Función: Creación de cupones que no solo dan descuentos, sino que actúan como "llaves" temporales para desbloquear funciones premium en planes gratuitos.
+2. Backend: Lógica y Conectores (Prisma API Routes)
+La comunicación se realiza mediante endpoints protegidos que validan el rol de SuperAdmin:
+
+API Dashboard: 
+
+api/superadmin/dashboard/route.ts
+Lógica: Realiza cálculos agregados de ingresos (MRR), cuenta suscripciones activas y genera la distribución de clientes por plan en una sola llamada optimizada.
+API Planes: 
+
+api/superadmin/planes/route.ts
+Lógica: Maneja el CRUD de los niveles de servicio. Integra campos para stripePriceId que sincronizan el sistema con la pasarela de pagos.
+3. Base de Datos (Estructura JSON/TS)
+La configuración de cada empresa se almacena en el modelo Plan dentro de schema.prisma.
+
+Estructura del Plan (JSON):
+json
+{
+  "id": 1,
+  "nombre": "PRO",
+  "precio": 49.00,
+  "funciones": ["tickets", "ia", "inventario"],
+  "limites": {
+    "usuarios": 20,
+    "tickets": 500
+  }
+}
+Impacto: Cuando una empresa hace login, el sistema lee este JSON y el frontend oculta o muestra los botones del sidebar según el array funciones.
+4. Estilos y Estética (Tailwind CSS)
+El SuperAdmin utiliza una paleta de colores diferenciada para evitar confusiones con los portales de clientes:
+
+Colores Primarios: Slate-900 (Oscuro profundo) para representar autoridad y control.
+Acentos: Blue-600 para acciones positivas y Amber-500 para el sistema de cupones.
+Layout: Bordes extremadamente redondeados (rounded-[48px]) y sombras suaves para un look de consola de gestión moderna tipo SaaS.
+TIP
+
+Para futuras mejoras, el sistema está preparado para implementar un "Modo Impersonar", permitiendo que el SuperAdmin entre al portal de un cliente específico para dar soporte técnico directo sin necesidad de pedir credenciales.
+
+superadmin/page.tsx
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Building2, 
+  Users, 
+  Ticket, 
+  Package, 
+  TrendingUp, 
+  AlertTriangle, 
+  Ban, 
+  Plus, 
+  ArrowRight,
+  ShieldCheck,
+  CreditCard,
+  History,
+  Zap
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
+export default function SuperAdminDashboard() {
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/superadmin/dashboard')
+      .then(res => res.json())
+      .then(data => {
+        setStats(data);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <div className="p-20 text-center"><TrendingUp className="animate-bounce mx-auto text-slate-200" size={60} /></div>;
+
+  const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f59e0b'];
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-700">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter">Portal Global</h1>
+          <p className="text-slate-500 font-medium text-lg">Visión unificada de la infraestructura multi-tenant.</p>
+        </div>
+        <div className="flex gap-4">
+          <div className="p-4 bg-white rounded-3xl shadow-sm border border-slate-100 flex items-center gap-3">
+            <div className="w-10 h-10 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center">
+              <ShieldCheck size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Estado API</p>
+              <p className="text-sm font-bold text-slate-800">Operativo</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Primary Stats - Business Focus */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[
+          { label: 'Total Empresas', value: stats.global.empresas, icon: Building2, color: 'from-blue-600 to-blue-400', shadow: 'shadow-blue-200' },
+          { label: 'MRR Estimado', value: `$${stats.global.ingresosMensuales || 0}`, icon: TrendingUp, color: 'from-emerald-600 to-emerald-400', shadow: 'shadow-emerald-200' },
+          { label: 'Suscripciones', value: stats.global.suscripcionesActivas || 0, icon: CreditCard, color: 'from-indigo-600 to-indigo-400', shadow: 'shadow-indigo-200' },
+          { label: 'Crecimiento', value: `+${stats.global.crecimientoMensual || 0}%`, icon: Users, color: 'from-amber-600 to-amber-400', shadow: 'shadow-amber-200' },
+        ].map((stat, i) => (
+          <div key={i} className={`relative p-8 rounded-[40px] bg-gradient-to-br ${stat.color} text-white shadow-2xl ${stat.shadow} overflow-hidden group`}>
+            <div className="relative z-10">
+              <stat.icon className="mb-4 opacity-80 group-hover:scale-110 transition-transform" size={32} />
+              <p className="text-sm font-black uppercase tracking-[0.2em] opacity-70 leading-none mb-1">{stat.label}</p>
+              <p className="text-5xl font-black tracking-tighter">{stat.value}</p>
+            </div>
+            {/* Background Shape */}
+            <div className="absolute -right-4 -bottom-4 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700" />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Distribution Chart */}
+        <Card className="lg:col-span-2 border-none shadow-2xl rounded-[48px] bg-white overflow-hidden p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-2xl font-black text-slate-800 tracking-tight">Distribución por Plan</h3>
+            <div className="flex gap-2">
+              <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Empresas Activas</span>
+            </div>
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stats.distribucionPlanes}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="nombre" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12, fontWeight: 700}} />
+                <YAxis hide />
+                <Tooltip 
+                  cursor={{fill: '#f8fafc'}}
+                  contentStyle={{borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)'}}
+                />
+                <Bar dataKey="cantidad" radius={[12, 12, 0, 0]} barSize={60}>
+                  {stats.distribucionPlanes.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-3 gap-4 mt-8">
+            {stats.distribucionPlanes.map((p: any, i: number) => (
+              <div key={i} className="p-4 bg-slate-50 rounded-3xl border border-slate-100">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{p.nombre}</p>
+                <p className="text-xl font-black text-slate-800">${p.ingresos}</p>
+                <p className="text-[10px] font-bold text-slate-500">{p.cantidad} clientes</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Alerts & Quick Actions */}
+        <div className="space-y-6">
+          <Card className="border-none shadow-xl rounded-[40px] bg-white p-8">
+            <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+              <AlertTriangle className="text-amber-500" /> Alertas de Control
+            </h3>
+            <div className="space-y-4">
+              <div className="p-5 bg-amber-50 rounded-3xl border border-amber-100 flex items-center gap-4">
+                <div className="w-12 h-12 bg-amber-200/50 rounded-2xl flex items-center justify-center text-amber-700">
+                  <CreditCard size={24} />
+                </div>
+                <div>
+                  <p className="text-lg font-black text-amber-900 leading-tight">{stats.alertas.porExpirar}</p>
+                  <p className="text-xs font-bold text-amber-700/70">Membresías por expirar</p>
+                </div>
+              </div>
+              <div className="p-5 bg-red-50 rounded-3xl border border-red-100 flex items-center gap-4">
+                <div className="w-12 h-12 bg-red-200/50 rounded-2xl flex items-center justify-center text-red-700">
+                  <Ban size={24} />
+                </div>
+                <div>
+                  <p className="text-lg font-black text-red-900 leading-tight">{stats.alertas.suspendidas}</p>
+                  <p className="text-xs font-bold text-red-700/70">Cuentas suspendidas</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Link href="/superadmin/empresas" className="p-6 bg-slate-900 text-white rounded-[32px] hover:bg-slate-800 transition-all flex flex-col justify-between group shadow-xl shadow-slate-200">
+              <Plus size={24} className="mb-4 text-blue-400" />
+              <p className="font-bold text-sm leading-tight">Nuevo<br/>Cliente</p>
+            </Link>
+            <button 
+              onClick={() => {
+                const titulo = prompt('Título del Comunicado:');
+                const mensaje = prompt('Mensaje del Comunicado:');
+                if (mensaje) {
+                  fetch('/api/superadmin/broadcast', {
+                    method: 'POST',
+                    body: JSON.stringify({ titulo, mensaje, tipo: 'warning' })
+                  }).then(() => alert('Enviado con éxito'));
+                }
+              }}
+              className="p-6 bg-amber-500 text-white rounded-[32px] hover:bg-amber-600 transition-all flex flex-col justify-between group shadow-xl shadow-amber-100"
+            >
+              <Zap size={24} className="mb-4 text-white" />
+              <p className="font-bold text-sm leading-tight">Enviar<br/>Broadcast</p>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Companies */}
+      <Card className="border-none shadow-2xl rounded-[48px] bg-white overflow-hidden p-8">
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-2xl font-black text-slate-800 tracking-tight">Clientes Recientes</h3>
+          <Link href="/superadmin/superadmin/empresas" className="text-sm font-black text-blue-600 hover:underline flex items-center gap-1">
+            Ver todos <ArrowRight size={16} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {stats.actividad.empresasRecientes.map((emp: any) => (
+            <div key={emp.id} className="p-6 bg-slate-50 rounded-[32px] border border-slate-100 flex items-center gap-4 group hover:bg-white hover:shadow-xl transition-all">
+              <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:text-blue-600 transition-colors">
+                {emp.nombre.substring(0, 2).toUpperCase()}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-black text-slate-800 truncate">{emp.nombre}</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase">{emp.plan?.nombre}</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                  <span className="text-[10px] font-bold text-slate-400">{new Date(emp.createdAt).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+
+--------------------
+empresa / page.tsx
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Building2, 
+  Shield, 
+  Activity, 
+  Search,
+  Plus,
+  MoreVertical,
+  Check,
+  X,
+  Loader2,
+  Calendar,
+  AlertTriangle,
+  Ban,
+  CheckCircle2,
+  Edit2
+} from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import toast from 'react-hot-toast';
+
+export default function EmpresasPage() {
+  const [empresas, setEmpresas] = useState<any[]>([]);
+  const [planes, setPlanes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  
+  const [formData, setFormData] = useState({
+    nombre: '',
+    slug: '',
+    planId: '',
+    fechaExpiracion: ''
+  });
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [resEmp, resPlanes] = await Promise.all([
+        fetch('/api/superadmin/empresas'),
+        fetch('/api/superadmin/planes')
+      ]);
+      const dataEmp = await resEmp.json();
+      const dataPlanes = await resPlanes.json();
+      setEmpresas(dataEmp);
+      setPlanes(dataPlanes);
+    } catch (error) {
+      toast.error('Error al cargar datos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const handleEdit = (empresa: any) => {
+    setEditingId(empresa.id);
+    setFormData({
+      nombre: empresa.nombre,
+      slug: empresa.slug,
+      planId: empresa.planId?.toString() || '',
+      fechaExpiracion: empresa.fechaExpiracion ? new Date(empresa.fechaExpiracion).toISOString().split('T')[0] : ''
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleToggleSuspension = async (empresa: any) => {
+    const nuevoEstado = !empresa.suspendido;
+    const confirmacion = confirm(`¿Estás seguro de ${nuevoEstado ? 'SUSPENDER' : 'ACTIVAR'} a ${empresa.nombre}?`);
+    if (!confirmacion) return;
+
+    try {
+      const res = await fetch(`/api/superadmin/empresas/${empresa.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          suspendido: nuevoEstado,
+          motivoSuspension: nuevoEstado ? 'Suspensión manual por administrador' : ''
+        })
+      });
+
+      if (res.ok) {
+        toast.success(nuevoEstado ? 'Cliente suspendido' : 'Cliente reactivado');
+        fetchData();
+      }
+    } catch (error) {
+      toast.error('Error de red');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const url = editingId ? `/api/superadmin/empresas/${editingId}` : '/api/superadmin/empresas';
+      const method = editingId ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formData,
+          planId: parseInt(formData.planId),
+          fechaExpiracion: formData.fechaExpiracion ? new Date(formData.fechaExpiracion) : null
+        })
+      });
+
+      if (res.ok) {
+        toast.success(editingId ? 'Datos actualizados' : 'Empresa creada correctamente');
+        setIsModalOpen(false);
+        setEditingId(null);
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.message || 'Error en la operación');
+      }
+    } catch (error) {
+      toast.error('Error de red');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Administración Global</h1>
+          <p className="text-slate-500 font-medium">Gestión de clientes, suscripciones y estados de vigencia.</p>
+        </div>
+        <button 
+          onClick={() => {
+            setEditingId(null);
+            setFormData({ nombre: '', slug: '', planId: planes[0]?.id.toString() || '', fechaExpiracion: '' });
+            setIsModalOpen(true);
+          }}
+          className="px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold flex items-center gap-2 hover:bg-slate-800 active:scale-95 transition-all shadow-lg"
+        >
+          <Plus size={20} /> Registrar Cliente
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[
+          { label: 'Total Clientes', value: empresas.length, icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Suspendidos', value: empresas.filter(e => e.suspendido).length, icon: Ban, color: 'text-red-600', bg: 'bg-red-50' },
+          { label: 'Próximos a Vencer', value: empresas.filter(e => e.fechaExpiracion && new Date(e.fechaExpiracion) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length, icon: AlertTriangle, color: 'text-amber-600', bg: 'bg-amber-50' },
+          { label: 'Salud Plataforma', value: 'Excelente', icon: Activity, color: 'text-green-600', bg: 'bg-green-50' },
+        ].map((stat, i) => (
+          <Card key={i} className="border-none shadow-sm bg-white overflow-hidden">
+            <CardContent className="p-6 flex items-center gap-4">
+              <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color}`}>
+                <stat.icon size={24} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+                <p className="text-2xl font-black text-slate-800">{stat.value}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <Card className="border-none shadow-2xl bg-white overflow-hidden rounded-[32px]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Cliente / Dominio</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Plan Actual</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Vigencia</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Estado</th>
+                <th className="p-6 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-right">Control de Acceso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={5} className="p-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-300" size={40} /></td></tr>
+              ) : empresas.map((emp) => (
+                <tr key={emp.id} className={`group transition-all ${emp.suspendido ? 'bg-red-50/30' : 'hover:bg-slate-50/50'}`}>
+                  <td className="p-6 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black transition-colors ${emp.suspendido ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                        {emp.nombre.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-800">{emp.nombre}</p>
+                        <p className="text-xs text-slate-400 font-medium">{emp.slug}.helpdesk.com</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-6 border-b border-slate-100">
+                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black border ${
+                      emp.plan?.nombre === 'ENTERPRISE' ? 'bg-purple-50 text-purple-600 border-purple-100' : 'bg-blue-50 text-blue-600 border-blue-100'
+                    }`}>
+                      {emp.plan?.nombre || 'SIN PLAN'}
+                    </span>
+                  </td>
+                  <td className="p-6 border-b border-slate-100">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Calendar size={14} className="text-slate-400" />
+                      <span className={`text-xs font-bold ${emp.fechaExpiracion && new Date(emp.fechaExpiracion) < new Date() ? 'text-red-500' : 'text-slate-600'}`}>
+                        {emp.fechaExpiracion ? new Date(emp.fechaExpiracion).toLocaleDateString() : 'Indefinida'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-6 border-b border-slate-100">
+                    {emp.suspendido ? (
+                      <span className="flex items-center gap-1.5 text-red-600 font-black text-[10px] uppercase tracking-wider"><Ban size={14} /> Suspendido</span>
+                    ) : (
+                      <span className="flex items-center gap-1.5 text-green-600 font-black text-[10px] uppercase tracking-wider"><CheckCircle2 size={14} /> Activo</span>
+                    )}
+                  </td>
+                  <td className="p-6 border-b border-slate-100 text-right">
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => handleEdit(emp)} className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-all" title="Editar Cliente">
+                        <Edit2 size={18} />
+                      </button>
+                      <button onClick={() => handleToggleSuspension(emp)} className={`p-2 rounded-xl transition-all ${emp.suspendido ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-red-50 text-red-600 hover:bg-red-100'}`} title={emp.suspendido ? 'Reactivar' : 'Suspender'}>
+                        {emp.suspendido ? <CheckCircle2 size={18} /> : <Ban size={18} />}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-[40px] w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-black text-slate-900">{editingId ? 'Editar Cliente' : 'Registrar Cliente'}</h2>
+                <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors"><X size={24} /></button>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Nombre Comercial</label>
+                  <input required value={formData.nombre} onChange={e => setFormData({...formData, nombre: e.target.value})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold" />
+                </div>
+                {!editingId && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Dominio (Slug)</label>
+                    <input required value={formData.slug} onChange={e => setFormData({...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-')})} className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 transition-all font-bold" />
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Plan</label>
+                    <select value={formData.planId} onChange={e => setFormData({...formData, planId: e.target.value})} className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold">
+                      {planes.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Vencimiento</label>
+                    <input type="date" value={formData.fechaExpiracion} onChange={e => setFormData({...formData, fechaExpiracion: e.target.value})} className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none font-bold text-sm" />
+                  </div>
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 px-6 py-4 text-slate-500 font-bold hover:bg-slate-50 rounded-2xl transition-all">Cancelar</button>
+                  <button disabled={isSubmitting} className="flex-1 px-6 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-slate-800 disabled:opacity-50 flex items-center justify-center gap-2 transition-all shadow-xl shadow-slate-200">
+                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : (editingId ? 'Guardar Cambios' : 'Activar Cuenta')}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+-----------
+
+planes/page.tsx
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Plus, 
+  Check, 
+  Loader2, 
+  Shield, 
+  Package, 
+  MessageSquare, 
+  Bot, 
+  BarChart3, 
+  Truck,
+  DollarSign,
+  Users,
+  CreditCard,
+  Zap,
+  Trash2,
+  Save,
+  Monitor,
+  RefreshCw
+} from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import toast from 'react-hot-toast';
+
+const MODULOS = [
+  { id: 'tickets', label: 'Tickets', icon: Shield },
+  { id: 'ia', label: 'IA Chatbot', icon: Bot },
+  { id: 'tecnico', label: 'Console Desktop', icon: Monitor },
+  { id: 'inventario', label: 'Inventario', icon: Package },
+  { id: 'logistica', label: 'Logística', icon: Truck },
+  { id: 'mensajes', label: 'Chat Staff', icon: MessageSquare },
+  { id: 'reportes', label: 'BI Reports', icon: BarChart3 },
+  { id: 'api', label: 'External API', icon: Zap },
+];
+
+export default function PlanesPage() {
+  const [planes, setPlanes] = useState<any[]>([]);
+  const [drafts, setDrafts] = useState<Record<number, any>>({});
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchPlanes();
+  }, []);
+
+  const fetchPlanes = async () => {
+    try {
+      const res = await fetch('/api/superadmin/planes');
+      const data = await res.json();
+      setPlanes(data);
+      // Inicializar borradores con los datos actuales
+      const initialDrafts: Record<number, any> = {};
+      data.forEach((p: any) => initialDrafts[p.id] = { ...p });
+      setDrafts(initialDrafts);
+    } catch (error) {
+      toast.error('Error al cargar planes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateDraft = (id: number, updates: any) => {
+    setDrafts(prev => ({
+      ...prev,
+      [id]: { ...prev[id], ...updates }
+    }));
+  };
+
+  const handleSave = async (id: number) => {
+    setSavingId(id);
+    try {
+      const res = await fetch('/api/superadmin/planes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(drafts[id])
+      });
+      if (res.ok) {
+        toast.success('Plan guardado correctamente');
+        fetchPlanes(); // Recargar para sincronizar
+      }
+    } catch (error) {
+      toast.error('Error al guardar');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const toggleModulo = (id: number, modId: string) => {
+    const plan = drafts[id];
+    const nuevasFunciones = plan.funciones.includes(modId)
+      ? plan.funciones.filter((f: string) => f !== modId)
+      : [...plan.funciones, modId];
+    updateDraft(id, { funciones: nuevasFunciones });
+  };
+
+  const handleCreate = async () => {
+    try {
+      const res = await fetch('/api/superadmin/planes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: 'Nuevo Plan',
+          precio: 0,
+          funciones: ['tickets'],
+          limites: { usuarios: 5, tickets: 50 }
+        })
+      });
+      if (res.ok) fetchPlanes();
+    } catch (error) {
+       toast.error('Error al crear');
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+             <CreditCard className="text-blue-600" size={40} /> Gestión de Niveles
+          </h1>
+          <p className="text-slate-500 font-medium">Ajusta módulos y precios. Presiona Guardar para aplicar.</p>
+        </div>
+        <button 
+          onClick={handleCreate}
+          className="px-8 py-4 bg-slate-900 text-white rounded-[24px] font-black flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl"
+        >
+          <Plus size={20} /> CREAR NIVEL
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+        {loading ? (
+          <div className="col-span-full py-20 text-center"><Loader2 className="animate-spin mx-auto text-blue-200" size={40} /></div>
+        ) : planes.map((plan) => {
+          const draft = drafts[plan.id] || plan;
+          const hasChanges = JSON.stringify(draft) !== JSON.stringify(plan);
+
+          return (
+            <Card key={plan.id} className={`relative bg-white border-none shadow-2xl rounded-[48px] overflow-hidden group transition-all ${hasChanges ? 'ring-4 ring-blue-500/20' : ''}`}>
+              {/* Header del Plan */}
+              <div className="p-8 bg-slate-900 text-white relative">
+                 <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-125 transition-transform duration-1000">
+                    <CreditCard size={80} />
+                 </div>
+                 <div className="relative z-10 space-y-4">
+                    <input 
+                      className="bg-transparent text-2xl font-black outline-none border-b border-white/20 focus:border-blue-400 w-full"
+                      value={draft.nombre}
+                      onChange={(e) => updateDraft(plan.id, { nombre: e.target.value })}
+                    />
+                    <div className="flex items-center gap-4">
+                       <div className="flex-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Precio Mensual</p>
+                          <div className="flex items-center gap-2">
+                             <span className="text-blue-400 font-black text-lg">$</span>
+                             <input 
+                              type="number"
+                              className="bg-transparent text-3xl font-black outline-none w-24"
+                              value={draft.precio}
+                              onChange={(e) => updateDraft(plan.id, { precio: parseFloat(e.target.value) })}
+                             />
+                          </div>
+                       </div>
+                       <div className="w-px h-10 bg-white/10"></div>
+                       <div className="flex-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">ID Pasarela</p>
+                          <input 
+                            className="bg-transparent text-[10px] font-mono outline-none border-b border-white/10 w-full text-blue-300"
+                            value={draft.stripePriceId || ''}
+                            placeholder="price_..."
+                            onChange={(e) => updateDraft(plan.id, { stripePriceId: e.target.value })}
+                          />
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Matrix de Módulos (Flags) */}
+              <div className="p-8 space-y-6">
+                 <div className="flex justify-between items-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Matrix de Funciones</p>
+                    {hasChanges && (
+                       <span className="text-[10px] font-black text-blue-500 bg-blue-50 px-2 py-1 rounded-full flex items-center gap-1 animate-pulse">
+                          <RefreshCw size={10} /> Cambios pendientes
+                       </span>
+                    )}
+                 </div>
+                 
+                 <div className="grid grid-cols-2 gap-3">
+                    {MODULOS.map((mod) => {
+                      const isActive = draft.funciones.includes(mod.id) || draft.funciones.includes('all');
+                      return (
+                        <button
+                          key={mod.id}
+                          onClick={() => toggleModulo(plan.id, mod.id)}
+                          disabled={draft.funciones.includes('all') && mod.id !== 'all'}
+                          className={`p-4 rounded-3xl border-2 flex items-center gap-3 transition-all relative overflow-hidden group/mod ${
+                            isActive 
+                              ? 'bg-blue-600 border-blue-600 text-white shadow-lg shadow-blue-100' 
+                              : 'bg-slate-50 border-slate-100 text-slate-400 grayscale hover:grayscale-0'
+                          }`}
+                        >
+                           <mod.icon size={18} className={isActive ? 'text-white' : 'text-slate-300'} />
+                           <span className="text-[11px] font-black uppercase tracking-tighter">{mod.label}</span>
+                        </button>
+                      )
+                    })}
+                 </div>
+
+                 {/* Límites */}
+                 <div className="pt-6 border-t border-slate-50 grid grid-cols-2 gap-4">
+                    <div>
+                       <label className="text-[10px] font-black text-slate-400 uppercase block mb-2">Máx Usuarios</label>
+                       <input 
+                          type="number"
+                          className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl font-black text-sm"
+                          value={draft.limites?.usuarios}
+                          onChange={(e) => updateDraft(plan.id, { limites: { ...draft.limites, usuarios: parseInt(e.target.value) } })}
+                       />
+                    </div>
+                    <div>
+                       <label className="text-[10px] font-black text-slate-400 uppercase block mb-2">Tickets/Mes</label>
+                       <input 
+                          type="number"
+                          className="w-full p-3 bg-slate-50 border border-slate-100 rounded-xl font-black text-sm"
+                          value={draft.limites?.tickets}
+                          onChange={(e) => updateDraft(plan.id, { limites: { ...draft.limites, tickets: parseInt(e.target.value) } })}
+                       />
+                    </div>
+                 </div>
+
+                 {/* Footer Acciones */}
+                 <div className="pt-6 flex flex-col gap-4">
+                    <div className="flex justify-between items-center">
+                       <div className="flex gap-2">
+                          <button 
+                             onClick={() => updateDraft(plan.id, { activo: !draft.activo })}
+                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
+                               draft.activo ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-600 border-red-100'
+                             }`}
+                          >
+                             {draft.activo ? 'Activo' : 'Pausado'}
+                          </button>
+                          <button 
+                             onClick={() => updateDraft(plan.id, { funciones: draft.funciones.includes('all') ? [] : ['all'] })}
+                             className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all ${
+                               draft.funciones.includes('all') ? 'bg-purple-600 text-white border-purple-700 shadow-lg' : 'bg-slate-50 text-slate-400 border-slate-100'
+                             }`}
+                          >
+                             Master Plan
+                          </button>
+                       </div>
+                       <button className="p-2 text-slate-200 hover:text-red-500 transition-colors">
+                          <Trash2 size={20} />
+                       </button>
+                    </div>
+
+                    {/* Botón GUARDAR y CANCELAR - Solo aparecen si hay cambios */}
+                    {hasChanges && (
+                       <div className="flex gap-2 animate-in slide-in-from-top-2">
+                          <button 
+                            onClick={() => updateDraft(plan.id, { ...plan })}
+                            className="flex-1 py-4 bg-slate-100 text-slate-500 rounded-[24px] font-black text-sm hover:bg-slate-200 transition-all flex items-center justify-center gap-2"
+                          >
+                             DESCARTAR
+                          </button>
+                          <button 
+                            onClick={() => handleSave(plan.id)}
+                            disabled={savingId === plan.id}
+                            className="flex-[2] py-4 bg-blue-600 text-white rounded-[24px] font-black text-sm hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+                          >
+                              {savingId === plan.id ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+                              GUARDAR
+                          </button>
+                       </div>
+                    )}
+                 </div>
+              </div>
+            </Card>
+          )
+        })}
+      </div>
+    </div>
+  );
+}
+----------------------
+
+promotion/page.tsx
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { 
+  Tag, 
+  Plus, 
+  Trash2, 
+  Calendar, 
+  Zap, 
+  Activity,
+  CheckCircle2,
+  XCircle,
+  Percent,
+  Clock
+} from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { toast } from 'react-hot-toast';
+
+const MODULOS_DISPONIBLES = [
+  { id: 'ia', nombre: 'Inteligencia Artificial' },
+  { id: 'tecnico', nombre: 'Consola Técnica Desktop' },
+  { id: 'api', nombre: 'Acceso API v1' },
+  { id: 'inventario_avanzado', nombre: 'Inventario Avanzado' },
+];
+
+export default function PromocionesPage() {
+  const [promos, setPromos] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  
+  // Form State
+  const [newPromo, setNewPromo] = useState({
+    codigo: '',
+    descuento: 0,
+    tipo: 'PORCENTAJE',
+    funcionesActivadas: [] as string[],
+    duracionDias: 30,
+    validoHasta: '',
+    limiteUsos: 0
+  });
+
+  useEffect(() => {
+    fetchPromos();
+  }, []);
+
+  const fetchPromos = async () => {
+    const res = await fetch('/api/superadmin/promociones');
+    const data = await res.json();
+    setPromos(data);
+    setLoading(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/superadmin/promociones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPromo)
+      });
+      if (res.ok) {
+        toast.success('Promoción creada');
+        setShowForm(false);
+        fetchPromos();
+      }
+    } catch (error) {
+      toast.error('Error al crear');
+    }
+  };
+
+  const toggleModulo = (id: string) => {
+    setNewPromo(prev => ({
+      ...prev,
+      funcionesActivadas: prev.funcionesActivadas.includes(id)
+        ? prev.funcionesActivadas.filter(m => m !== id)
+        : [...prev.funcionesActivadas, id]
+    }));
+  };
+
+  return (
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tighter flex items-center gap-3">
+            <Tag className="text-amber-500" size={40} /> Códigos y Funciones
+          </h1>
+          <p className="text-slate-500 font-medium">Crea cupones que activan módulos premium temporalmente.</p>
+        </div>
+        <button 
+          onClick={() => setShowForm(!showForm)}
+          className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-2xl text-sm font-black hover:bg-slate-800 transition-all shadow-lg"
+        >
+          <Plus size={18} /> {showForm ? 'Cerrar' : 'Nuevo Código'}
+        </button>
+      </div>
+
+      {showForm && (
+        <Card className="p-8 border-none shadow-2xl rounded-[40px] bg-white animate-in zoom-in-95 duration-300">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Código del Cupón</label>
+                <input 
+                  type="text" 
+                  placeholder="Ej: REGALOTECNICO"
+                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold uppercase"
+                  value={newPromo.codigo}
+                  onChange={e => setNewPromo({...newPromo, codigo: e.target.value.toUpperCase()})}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                 <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Descuento</label>
+                    <input 
+                      type="number" 
+                      className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                      value={newPromo.descuento}
+                      onChange={e => setNewPromo({...newPromo, descuento: parseFloat(e.target.value)})}
+                    />
+                 </div>
+                 <div>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Tipo</label>
+                    <select 
+                      className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                      value={newPromo.tipo}
+                      onChange={e => setNewPromo({...newPromo, tipo: e.target.value})}
+                    >
+                      <option value="PORCENTAJE">Porcentaje (%)</option>
+                      <option value="MONEDA">Monto Fijo ($)</option>
+                    </select>
+                 </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Duración de Funciones (Días)</label>
+                <div className="flex items-center gap-3">
+                   <Clock size={20} className="text-slate-400" />
+                   <input 
+                    type="number" 
+                    className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                    value={newPromo.duracionDias}
+                    onChange={e => setNewPromo({...newPromo, duracionDias: parseInt(e.target.value)})}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">Válido Hasta</label>
+                <input 
+                  type="date" 
+                  className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold"
+                  value={newPromo.validoHasta}
+                  onChange={e => setNewPromo({...newPromo, validoHasta: e.target.value})}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 mb-2 block">🎁 Módulos a Desbloquear</label>
+              <div className="grid grid-cols-1 gap-3">
+                {MODULOS_DISPONIBLES.map(modulo => (
+                  <button
+                    key={modulo.id}
+                    type="button"
+                    onClick={() => toggleModulo(modulo.id)}
+                    className={`p-4 rounded-2xl border flex items-center justify-between transition-all ${
+                      newPromo.funcionesActivadas.includes(modulo.id)
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-lg'
+                        : 'bg-white border-slate-100 text-slate-600 hover:border-blue-200'
+                    }`}
+                  >
+                    <span className="font-bold">{modulo.nombre}</span>
+                    {newPromo.funcionesActivadas.includes(modulo.id) ? <CheckCircle2 size={18} /> : <Zap size={18} className="opacity-30" />}
+                  </button>
+                ))}
+              </div>
+              <button 
+                type="submit"
+                className="w-full py-5 bg-blue-600 text-white rounded-[24px] font-black text-lg hover:bg-blue-700 transition-all shadow-xl shadow-blue-100"
+              >
+                Crear Promoción
+              </button>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {/* Lista de Promociones */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {loading ? (
+           <div className="col-span-full py-20 text-center"><Activity className="animate-spin mx-auto text-blue-200" size={40} /></div>
+        ) : promos.map((promo) => (
+          <Card key={promo.id} className="p-8 border-none shadow-xl rounded-[40px] bg-white group hover:shadow-2xl transition-all relative overflow-hidden">
+             <div className="relative z-10">
+                <div className="flex justify-between items-start mb-4">
+                   <div className="px-3 py-1 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                      {promo.activo ? 'Activo' : 'Inactivo'}
+                   </div>
+                   <button className="text-slate-300 hover:text-red-500 transition-colors">
+                      <Trash2 size={18} />
+                   </button>
+                </div>
+                <h3 className="text-3xl font-black text-slate-900 mb-2">{promo.codigo}</h3>
+                <p className="text-sm font-bold text-slate-500 mb-6">
+                   {promo.tipo === 'PORCENTAJE' ? `${promo.descuento}% de descuento` : `$${promo.descuento} de descuento`}
+                </p>
+                
+                <div className="space-y-3 mb-6">
+                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Módulos de regalo:</p>
+                   <div className="flex flex-wrap gap-2">
+                      {Array.isArray(promo.funcionesActivadas) && promo.funcionesActivadas.map((f: string) => (
+                        <span key={f} className="px-2 py-1 bg-blue-50 text-blue-600 rounded-md text-[9px] font-black uppercase">
+                           {f}
+                        </span>
+                      ))}
+                      {(!promo.funcionesActivadas || promo.funcionesActivadas.length === 0) && (
+                        <span className="text-[10px] text-slate-300 italic">Sin funciones extras</span>
+                      )}
+                   </div>
+                </div>
+
+                <div className="flex items-center justify-between text-xs font-bold pt-4 border-t border-slate-50">
+                   <div className="flex items-center gap-2 text-slate-400">
+                      <Calendar size={14} /> {new Date(promo.validoHasta).toLocaleDateString()}
+                   </div>
+                   <div className="text-slate-700">
+                      {promo.usosActuales} / {promo.limiteUsos === 0 ? '∞' : promo.limiteUsos} usos
+                   </div>
+                </div>
+             </div>
+             {/* Background Decoration */}
+             <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-slate-50 rounded-full group-hover:scale-150 transition-transform duration-700" />
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+___________________________
+
+API Dashboard: 
+
+api/superadmin/dashboard/route.ts
+
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user.role?.toLowerCase().includes('super')) {
+      return NextResponse.json({ message: 'No autorizado' }, { status: 403 });
+    }
+
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const [
+      totalEmpresas,
+      empresasEsteMes,
+      empresasRecientes,
+      porExpirar,
+      suspendidas,
+      planes,
+      suscripcionesActivas
+    ] = await Promise.all([
+      prisma.empresa.count(),
+      prisma.empresa.count({ where: { createdAt: { gte: startOfMonth } } }),
+      prisma.empresa.findMany({
+        take: 6,
+        orderBy: { createdAt: 'desc' },
+        include: { plan: true }
+      }),
+      prisma.empresa.count({
+        where: {
+          fechaExpiracion: {
+            lt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 días
+          }
+        }
+      }),
+      prisma.empresa.count({
+        where: { suspendido: true }
+      }),
+      prisma.plan.findMany({
+        include: {
+          _count: {
+            select: { empresas: true }
+          }
+        }
+      }),
+      prisma.empresa.count({ 
+        where: { 
+          activo: true, 
+          planId: { not: null } 
+        } 
+      })
+    ]);
+
+    // Calcular MRR (Ingresos Mensuales Recurrentes)
+    const ingresosMensuales = planes.reduce((acc, p) => acc + (p._count.empresas * p.precio), 0);
+    
+    // Calcular Crecimiento (Empresas nuevas este mes vs total previo)
+    const totalPrevio = totalEmpresas - empresasEsteMes;
+    const crecimientoMensual = totalPrevio > 0 
+      ? Math.round((empresasEsteMes / totalPrevio) * 100) 
+      : (empresasEsteMes > 0 ? 100 : 0);
+
+    const stats = {
+      global: {
+        empresas: totalEmpresas,
+        ingresosMensuales: ingresosMensuales.toLocaleString(),
+        suscripcionesActivas,
+        crecimientoMensual
+      },
+      alertas: {
+        porExpirar,
+        suspendidas
+      },
+      actividad: {
+        empresasRecientes
+      },
+      distribucionPlanes: planes.map(p => ({
+        nombre: p.nombre,
+        cantidad: p._count.empresas,
+        ingresos: (p._count.empresas * p.precio).toLocaleString()
+      }))
+    };
+
+    return NextResponse.json(stats);
+  } catch (error) {
+    console.error("Error en Dashboard API:", error);
+    return NextResponse.json({ message: 'Error al obtener dashboard' }, { status: 500 });
+  }
+}
+-------------------------------
+
+API Planes: 
+
+api/superadmin/planes/route.ts
+
+import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ message: 'No autorizado' }, { status: 401 });
+    }
+
+    const planes = await prisma.plan.findMany({
+      orderBy: { precio: 'asc' },
+      include: {
+        _count: {
+          select: { empresas: true }
+        }
+      }
+    });
+
+    return NextResponse.json(planes);
+  } catch (error) {
+    return NextResponse.json({ message: 'Error al obtener planes' }, { status: 500 });
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user.role?.toLowerCase().includes('super')) {
+      return NextResponse.json({ message: 'No autorizado' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { nombre, descripcion, precio, funciones, limites, intervalo, moneda, stripePriceId } = body;
+
+    if (!nombre) {
+      return NextResponse.json({ message: 'El nombre es requerido' }, { status: 400 });
+    }
+
+    const plan = await prisma.plan.create({
+      data: {
+        nombre,
+        descripcion,
+        precio: parseFloat(precio) || 0,
+        intervalo: intervalo || 'mensual',
+        moneda: moneda || 'USD',
+        stripePriceId,
+        funciones: funciones || [],
+        limites: limites || {}
+      }
+    });
+
+    return NextResponse.json(plan, { status: 201 });
+  } catch (error: any) {
+    if (error.code === 'P2002') {
+      return NextResponse.json({ message: 'Ya existe un plan con ese nombre' }, { status: 400 });
+    }
+    return NextResponse.json({ message: 'Error al crear plan' }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user.role?.toLowerCase().includes('super')) {
+      return NextResponse.json({ message: 'No autorizado' }, { status: 403 });
+    }
+
+    const body = await req.json();
+    const { id, nombre, descripcion, precio, funciones, limites, intervalo, moneda, stripePriceId, activo } = body;
+
+    if (!id) {
+      return NextResponse.json({ message: 'El ID del plan es requerido' }, { status: 400 });
+    }
+
+    const plan = await prisma.plan.update({
+      where: { id: parseInt(id) },
+      data: {
+        nombre,
+        descripcion,
+        precio: precio !== undefined ? parseFloat(precio) : undefined,
+        intervalo,
+        moneda,
+        stripePriceId,
+        funciones,
+        limites,
+        activo
+      }
+    });
+
+    return NextResponse.json(plan);
+  } catch (error) {
+    return NextResponse.json({ message: 'Error al actualizar plan' }, { status: 500 });
+  }
+}
+----------------------
+

@@ -195,14 +195,31 @@ async def register_company(
         
         await db.commit()
         
-        # TODO: Send email with verification_token (Brevo/Resend)
-        print(f"🚀 Company {data.name} registered successfully. Token: {verification_token}")
+        # 7. Enviar Email de Verificación (Brevo o Consola en Desarrollo)
+        from app.services.notifications import notification_helper
+        from app.core.config import settings
+
+        subject = f"Verifica tu cuenta - {settings.PROJECT_NAME}"
+        html = f"""
+            <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <h2 style="color: #1e293b;">Bienvenido a {settings.PROJECT_NAME}</h2>
+                <p>Hola <strong>{data.admin_name}</strong>,</p>
+                <p>Gracias por registrar a <strong>{data.name}</strong> en nuestra plataforma. Para completar tu registro, utiliza el siguiente código de verificación:</p>
+                <div style="background: #f8fafc; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                    <h1 style="color: #2563eb; font-size: 40px; letter-spacing: 10px; margin: 0;">{verification_token}</h1>
+                </div>
+                <p style="color: #64748b; font-size: 14px;">Este código es privado y obligatorio para activar tu instancia multi-tenant.</p>
+                <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+                <p style="font-size: 12px; color: #94a3b8;">© 2026 {settings.PROJECT_NAME} Support Team</p>
+            </div>
+        """
+        
+        await notification_helper.send_email(data.admin_email, subject, html)
 
         return {
             "status": "success",
-            "message": "Company registered. Please verify your email.",
-            "company_id": new_company.id,
-            "verification_token": verification_token # Dev only
+            "message": "Company registered successfully. Check your email for the verification code.",
+            "company_id": new_company.id
         }
 
     except Exception as e:

@@ -26,7 +26,22 @@ class NotificationService:
             print("Pusher no configurado.")
 
     async def send_email(self, to_email: str, subject: str, html_content: str):
-        """Envia correos profesionales via Brevo (ex Sendinblue)"""
+        """Envia correos profesionales via Brevo (ex Sendinblue) o los imprime en consola en desarrollo"""
+        
+        # Modo Desarrollo: Imprimir en consola para validacion rapida
+        if settings.ENVIRONMENT == "development":
+            print("\n" + "="*50)
+            print("🚀 [MODO DESARROLLO] ENVÍO DE EMAIL SIMULADO")
+            print(f"PARA: {to_email}")
+            print(f"ASUNTO: {subject}")
+            print("-" * 50)
+            # Limpiar un poco el HTML para la consola
+            import re
+            clean_text = re.sub('<[^<]+?>', '', html_content)
+            print(f"CONTENIDO: {clean_text}")
+            print("="*50 + "\n")
+            return True
+
         if not settings.BREVO_API_KEY:
             print("Brevo API Key no configurada. Saltando email.")
             return
