@@ -29,6 +29,8 @@ class User(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
     signature_url = Column(String(500), nullable=True)
+    reset_token = Column(String(10), nullable=True)
+    reset_token_expires = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     role = relationship("Role")

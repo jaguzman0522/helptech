@@ -178,9 +178,12 @@ export default function LoginPage() {
                 >
                   Registrar Nueva Instancia
                 </Link>
-                <button type="button" className="text-[10px] font-bold text-slate-600 hover:text-blue-500 transition-colors uppercase tracking-widest">
-                  ¿Olvidaste tu acceso? Contacta a soporte
-                </button>
+                <Link 
+                  to="/forgot-password" 
+                  className="text-[10px] font-bold text-slate-600 hover:text-blue-500 transition-colors uppercase tracking-widest text-center"
+                >
+                  ¿Olvidaste tu acceso? Recuperar clave
+                </Link>
               </div>
             </form>
           </div>

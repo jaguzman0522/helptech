@@ -226,3 +226,74 @@ async def register_company(
         await db.rollback()
         print(f"❌ REGISTER ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error registering company: {str(e)}")
+
+class PasswordResetRequest(BaseModel):
+    email: str
+
+class PasswordReset(BaseModel):
+    email: str
+    token: str
+    new_password: str
+
+@router.post("/forgot-password")
+async def forgot_password(
+    data: PasswordResetRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(User).where(User.email == data.email)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        # Por seguridad, devolvemos success aunque no exista
+        return {"message": "Si el correo está registrado, recibirás un código"}
+    
+    # Generar código de 6 dígitos
+    reset_token = "".join([str(random.randint(0, 9)) for _ in range(6)])
+    user.reset_token = reset_token
+    user.reset_token_expires = datetime.now() + timedelta(minutes=15)
+    
+    await db.commit()
+    
+    # Enviar Email
+    from app.services.notifications import notification_helper
+    from app.core.config import settings
+    
+    subject = f"Recuperación de Contraseña - {settings.PROJECT_NAME}"
+    html = f"""
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
+            <h2 style="color: #1e293b;">Recuperación de Contraseña</h2>
+            <p>Has solicitado restablecer tu contraseña. Utiliza el siguiente código para continuar:</p>
+            <div style="background: #f1f5f9; padding: 20px; text-align: center; border-radius: 12px; margin: 20px 0;">
+                <h1 style="color: #0f172a; font-size: 36px; letter-spacing: 10px; margin: 0;">{reset_token}</h1>
+            </div>
+            <p style="color: #64748b; font-size: 14px;">Este código expirará en 15 minutos.</p>
+        </div>
+    """
+    await notification_helper.send_email(user.email, subject, html)
+    
+    return {"message": "Código enviado correctamente"}
+
+@router.post("/reset-password")
+async def reset_password(
+    data: PasswordReset,
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(User).where(User.email == data.email)
+    result = await db.execute(query)
+    user = result.scalar_one_or_none()
+    
+    if not user or user.reset_token != data.token:
+        raise HTTPException(status_code=400, detail="Código o email inválido")
+    
+    if datetime.now() > user.reset_token_expires:
+        raise HTTPException(status_code=400, detail="El código ha expirado")
+    
+    # Actualizar contraseña
+    user.hashed_password = security.get_password_hash(data.new_password)
+    user.reset_token = None
+    user.reset_token_expires = None
+    
+    await db.commit()
+    
+    return {"message": "Contraseña actualizada con éxito"}

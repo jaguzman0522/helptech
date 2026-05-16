@@ -20,6 +20,7 @@ import AccessControl from './pages/AccessControl';
 import SupportRounds from './pages/SupportRounds';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
+import ForgotPassword from './pages/ForgotPassword';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, isLoading } = useAuth();
@@ -48,6 +49,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register-company" element={<RegisterCompany />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/dashboard/tickets" element={<ProtectedRoute><Tickets /></ProtectedRoute>} />
         <Route path="/dashboard/tickets/new" element={<ProtectedRoute><NewTicket /></ProtectedRoute>} />
