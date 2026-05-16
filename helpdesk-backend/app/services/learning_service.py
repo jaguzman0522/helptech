@@ -1,9 +1,9 @@
 import json
 import os
 from typing import Dict
-from app.services.rule_classifier import REGLAS_BASE
+from app.services.rule_classifier import BASE_RULES
 
-APRENDIZAJE_PATH = "c:/Users/HDCO-HEALTH/Documents/helpdesk-tech/helpdesk-backend/data/aprendizaje.json"
+APRENDIZAJE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "aprendizaje.json")
 
 class LearningService:
     def __init__(self):
